@@ -199,6 +199,15 @@ export default class Device extends AABBDevice {
         this.send(Buffer.from('F0ED1121010000001800', 'hex'))
     }
 
+    // aa09f02405010098bb for start
+ 
+// Current power on 
+    
+
+    powerOn() {
+        this.send(Buffer.from('F0A1010011', 'hex'))
+    }
+
     processAABB(buf: Buffer) {
         if (buf.length === 80 && buf[0] == 0x20) {
             const status = buf[43]
@@ -237,14 +246,21 @@ export default class Device extends AABBDevice {
             this.publishProperty('steam', options & 0x80 ? 'ON' : 'OFF')
             this.publishProperty('soil', SOIL_LEVELS.map(soil))
         }
+        else {
+            console.log('Unknown AABB packet for washer', buf.toString('hex'))
+        }
     }
 
     setProperty(prop: string, mqttValue: string) {
+        // AA08F0A1010011BB what I send for power on
+        // AA0DF0E5000201FF010200C4BB what I send for power off
+        // AA09F0240101009CBB what is sent for power off
+        // AA08F02A010098BB what is sent for power on
         if (prop === 'power') {
             if (mqttValue === 'ON') {
-                this.send(Buffer.from('F02A0100', 'hex'))
+                this.send(Buffer.from('F0A10100', 'hex'))
             } else if (mqttValue === 'OFF') {
-                this.send(Buffer.from('F024010100', 'hex'))
+                this.send(Buffer.from('F0E5000201FF010200', 'hex'))
             }
         }
 
