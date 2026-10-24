@@ -241,7 +241,7 @@ export default class Device extends AABBDevice {
         }
         else if (buf.length === 292 && buf[0] == 0x20) {
             console.log('[DEBUG] Possible on/off packet', buf.toString('hex'))
-        } else if (buf.length === 146 && buf[0] == 0x20) {
+        } else if (buf.length === 142 && buf[0] == 0x20) {
             console.log('[DEBUG] Possible packet after changing cycle', buf.toString('hex'))
         }
         else{
