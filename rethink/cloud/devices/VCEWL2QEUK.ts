@@ -1,10 +1,13 @@
 import HADevice from './base'
+import { Enum } from '@/util/enum'
 import { Device as Thinq2Device } from '../thinq2/device'
 import { tombstone, type Connection } from '../homeassistant'
 import { type Metadata } from '../thinq'
 import { allowExtendedType } from '@/util/casting'
 import AABBDevice from './aabb_device'
-import { ERRORS, STATES, COURSES, TEMPERATURES, SPINS, SOIL_LEVELS } from './washer_common'
+import { ERRORS, STATES, TEMPERATURES, SPINS, SOIL_LEVELS } from './washer_common'
+
+const COURSES = Enum.of({})
 
 export default class Device extends AABBDevice {
     constructor(HA: Connection, thinq: Thinq2Device, meta: Metadata) {
@@ -198,16 +201,6 @@ export default class Device extends AABBDevice {
     start() {
         this.send(Buffer.from('F0ED1121010000001800', 'hex'))
     }
-
-    // aa09f02405010098bb for start
- 
-// Current power on 
-    
-
-    powerOn() {
-        this.send(Buffer.from('F0A1010011', 'hex'))
-    }
-
     processAABB(buf: Buffer) {
         if (buf.length === 80 && buf[0] == 0x20) {
             const status = buf[43]
@@ -246,8 +239,13 @@ export default class Device extends AABBDevice {
             this.publishProperty('steam', options & 0x80 ? 'ON' : 'OFF')
             this.publishProperty('soil', SOIL_LEVELS.map(soil))
         }
-        else {
-            console.log('Unknown AABB packet for washer', buf.toString('hex'))
+        else if (buf.length === 292 && buf[0] == 0x20) {
+            console.log('[DEBUG] Possible on/off packet', buf.toString('hex'))
+        } else if (buf.length === 146 && buf[0] == 0x20) {
+            console.log('[DEBUG] Possible packet after changing cycle', buf.toString('hex'))
+        }
+        else{
+            console.log('[DEBUG] Unknown AABB packet for washer', buf.toString('hex'))
         }
     }
 
