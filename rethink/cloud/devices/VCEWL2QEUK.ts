@@ -5,10 +5,63 @@ import { tombstone, type Connection } from '../homeassistant'
 import { type Metadata } from '../thinq'
 import { allowExtendedType } from '@/util/casting'
 import AABBDevice from './aabb_device'
-import { ERRORS, STATES, TEMPERATURES, SPINS, SOIL_LEVELS } from './washer_common'
+import { ERRORS, STATES } from './washer_common'
 
-const COURSES = Enum.of({})
+const COURSES = Enum.of({
+    'Not Specified': 404,
+    'Bed Sheets': 1,
+    'Towels': 2,
+    'Cotton': 3,
+    'Delicate': 4,
+    'Sleeves': 5,
+    'AI Wash': 6,
+    'Quick 14': 7,
+    'Bedding': 8,
+    'Wool/Hand': 9,
+    'Down Jacket': 10,
+    'Tub Clean': 11,
+    'Rinse + Spin': 12,
+    'Syntetic': 13,
+    'Spin Only': 14,
+    'Mix': 15,
+    'Eco 40-60': 16,
+    'Turbowash 39': 17,
+});
+const TEMPERATURES = Enum.of({
+    'Not specified': 404,
+    'Cold': 0,
+    '20°C': 1,
+    '30°C': 2,
+    '40°C': 3,
+    '60°C': 4,
+    '90°C': 5,
+})
 
+const SPINS = Enum.of({
+    'Not specified': 404,
+    'No spin': 0,
+    '400 rpm': 1,
+    '800 rpm': 2,
+    '1000 rpm': 3,
+    '1200 rpm': 4,
+    '1400 rpm': 5,
+})
+
+const RINSES = Enum.of({
+    'Not specified': 404,
+    'Rinse': 0,
+    'Rinse+': 1,
+    'Rinse++': 2,
+    'Rinse + Hold': 3,
+    'Rinse+ + Hold': 4,
+});
+
+const SOIL_LEVELS = Enum.of({
+    'Not specified': 404,
+    'Light': 0,
+    'Medium': 1,
+    'Heavy': 2,
+})
 export default class Device extends AABBDevice {
     constructor(HA: Connection, thinq: Thinq2Device, meta: Metadata) {
         super(HA, thinq, false)
@@ -243,6 +296,76 @@ export default class Device extends AABBDevice {
                 const status = status_code > 0 ? 'Ready' : 'Off'
                 this.publishProperty('power', status_code > 0 ? 'ON' : 'OFF')
                 this.publishProperty('status', status)
+                const course_code = buf[82]
+                const COURSE_CODES = Enum.of({
+                    404: 0x00,
+                    1: 0x81,
+                    2: 0x54,
+                    3: 0x2E,
+                    4: 0x16,
+                    5: 0xA9,
+                    6: 0x72,
+                    7: 0x4B,
+                    8: 0x1B,
+                    9: 0x5E,
+                    10: 0x73,
+                    11: 0x55,
+                    12: 0x37,
+                    13: 0x1D,
+                    14: 0x4E,
+                    15: 0x2B,
+                    16: 0x13,
+                    17: 0x7A,
+                });
+                const course_index = Number(COURSE_CODES.map(course_code))
+                this.publishProperty('course', COURSES.map(course_index))
+            }
+            else {
+                const soil_code = buf[77]
+                const temperature_code = buf[78]
+                const rinse_code = buf[79]
+                const spin_code = buf[80]
+                const TEMP_CODES = Enum.of({
+                    404: 0x00,
+                    0: 0x08,
+                    1: 0x01,
+                    2: 0x02,
+                    3: 0x03,
+                    4: 0x05,
+                    5: 0x06,
+                });
+                const SPIN_CODES = Enum.of({
+                    404: 0x00,
+                    0: 0x00,
+                    1: 0x01,
+                    2: 0x04,
+                    3: 0x06,
+                    4: 0x08,
+                    5: 0x09,
+                });
+                const RINSE_CODES = Enum.of({
+                    404: 0x00,
+                    0: 0x00,
+                    1: 0x0E,
+                    2: 0x0F,
+                    3: 0x10,
+                    4: 0x12,
+                    5: 0x13,
+                });
+                const SOIL_CODES = Enum.of({
+                    404: 0x00,
+                    0: 0x01,
+                    1: 0x03,
+                    2: 0x05,
+                });
+                const temperature_index = Number(TEMP_CODES.map(temperature_code))
+                const spin_index = Number(SPIN_CODES.map(spin_code))
+                const rinse_index = Number(RINSE_CODES.map(rinse_code))
+                const soil_index = Number(SOIL_CODES.map(soil_code))
+                this.publishProperty('temp', TEMPERATURES.map(temperature_index))
+                this.publishProperty('spin', SPINS.map(spin_index))
+                this.publishProperty('soil', SOIL_LEVELS.map(soil_index))
+                this.publishProperty('rinse', RINSES.map(rinse_index))
             }
         }
         else {
