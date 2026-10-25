@@ -256,6 +256,7 @@ export default class Device extends AABBDevice {
     }
     processAABB(buf: Buffer) {
         if (buf.length === 80 && buf[0] == 0x20) {
+            console.log('[DEBUG] Old packet')
             const time_remain = buf[44] * 60 + buf[45]
             const time_initial = buf[46] * 60 + buf[47]
             const course = buf[48]
@@ -298,10 +299,15 @@ export default class Device extends AABBDevice {
                 this.publishProperty('status', status)
             }
             else {
-                const soil_code = buf[77]
-                const temperature_code = buf[78]
-                const rinse_code = buf[79]
-                const spin_code = buf[80]
+                console.log('[DEBUG] Not a power packet', buf.toString('hex'))
+                const soil_code = buf[78]
+                console.log('[DEBUG][NO POWER] Soil code', soil_code)
+                const temperature_code = buf[79]
+                console.log('[DEBUG][NO POWER] Temperature code', temperature_code)
+                const rinse_code = buf[80]
+                console.log('[DEBUG][NO POWER] Rinse code', rinse_code)
+                const spin_code = buf[81]
+                console.log('[DEBUG][NO POWER] Spin code', spin_code)
                 const TEMP_CODES = Enum.of({
                     404: 0x00,
                     0: 0x08,
@@ -370,6 +376,15 @@ export default class Device extends AABBDevice {
         }
         else {
             console.log('[DEBUG] Unknown AABB packet for washer', buf.toString('hex'))
+            console.log('[DEBUG] Length', buf.length)
+            const soil_code = buf[78]
+            console.log('[DEBUG][NO POWER] Soil code', soil_code)
+            const temperature_code = buf[79]
+            console.log('[DEBUG][NO POWER] Temperature code', temperature_code)
+            const rinse_code = buf[80]
+            console.log('[DEBUG][NO POWER] Rinse code', rinse_code)
+            const spin_code = buf[81]
+            console.log('[DEBUG][NO POWER] Spin code', spin_code)
         }
     }
 
