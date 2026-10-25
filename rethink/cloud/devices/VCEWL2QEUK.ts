@@ -208,6 +208,15 @@ export default class Device extends AABBDevice {
                         name: 'Reserve time',
                         icon: 'mdi:timer-sand',
                     },
+                    rinse: {
+                        platform: 'sensor',
+                        unique_id: '$deviceid-rinse',
+                        state_topic: '$this/rinse',
+                        name: 'Rinse',
+                        icon: 'mdi:water',
+                        device_class: 'enum',
+                        options: RINSES.options,
+                    },
                     extra_rinse: {
                         platform: 'binary_sensor',
                         unique_id: '$deviceid-extra_rinse',
