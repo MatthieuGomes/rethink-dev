@@ -203,7 +203,6 @@ export default class Device extends AABBDevice {
     }
     processAABB(buf: Buffer) {
         if (buf.length === 80 && buf[0] == 0x20) {
-            const status = buf[43]
             const time_remain = buf[44] * 60 + buf[45]
             const time_initial = buf[46] * 60 + buf[47]
             const course = buf[48]
@@ -218,10 +217,8 @@ export default class Device extends AABBDevice {
             const cycles = buf[64]
             const energy = buf[71] * 256 + buf[72]
 
-            this.publishProperty('power', status > 0 ? 'ON' : 'OFF')
             this.publishProperty('error_message', ERRORS.map(error)) // publish message before set error state
             this.publishProperty('error', error ? 'ON' : 'OFF')
-            this.publishProperty('status', STATES.map(status))
             this.publishProperty('course', COURSES.map(course))
             this.publishProperty('spin', SPINS.map(spin))
             this.publishProperty('temp', TEMPERATURES.map(temp))
@@ -238,13 +235,17 @@ export default class Device extends AABBDevice {
             this.publishProperty('prewash', options & 0x40 ? 'ON' : 'OFF')
             this.publishProperty('steam', options & 0x80 ? 'ON' : 'OFF')
             this.publishProperty('soil', SOIL_LEVELS.map(soil))
-        }
-        else if (buf.length === 292 && buf[0] == 0x20) {
-            console.log('[DEBUG] Possible on/off packet', buf.toString('hex'))
         } else if (buf.length === 142 && buf[0] == 0x20) {
-            console.log('[DEBUG] Possible packet after changing cycle', buf.toString('hex'))
+            console.log('[DEBUG] Packet containing Infos', buf.toString('hex'))
+            if (buf[91] === 0x63) {
+                console.log('[DEBUG] Power packet')
+                const status_code = buf[79]
+                const status = status_code > 0 ? 'Ready' : 'Off'
+                this.publishProperty('power', status_code > 0 ? 'ON' : 'OFF')
+                this.publishProperty('status', status)
+            }
         }
-        else{
+        else {
             console.log('[DEBUG] Unknown AABB packet for washer', buf.toString('hex'))
         }
     }
