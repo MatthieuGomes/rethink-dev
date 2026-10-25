@@ -296,29 +296,6 @@ export default class Device extends AABBDevice {
                 const status = status_code > 0 ? 'Ready' : 'Off'
                 this.publishProperty('power', status_code > 0 ? 'ON' : 'OFF')
                 this.publishProperty('status', status)
-                const course_code = buf[82]
-                const COURSE_CODES = Enum.of({
-                    404: 0x00,
-                    1: 0x81,
-                    2: 0x54,
-                    3: 0x2E,
-                    4: 0x16,
-                    5: 0xA9,
-                    6: 0x72,
-                    7: 0x4B,
-                    8: 0x1B,
-                    9: 0x5E,
-                    10: 0x73,
-                    11: 0x55,
-                    12: 0x37,
-                    13: 0x1D,
-                    14: 0x4E,
-                    15: 0x2B,
-                    16: 0x13,
-                    17: 0x7A,
-                });
-                const course_index = Number(COURSE_CODES.map(course_code))
-                this.publishProperty('course', COURSES.map(course_index))
             }
             else {
                 const soil_code = buf[77]
@@ -367,6 +344,29 @@ export default class Device extends AABBDevice {
                 this.publishProperty('soil', SOIL_LEVELS.map(soil_index))
                 this.publishProperty('rinse', RINSES.map(rinse_index))
             }
+            const course_code = buf[82]
+            const COURSE_CODES = Enum.of({
+                404: 0x00,
+                1: 0x81,
+                2: 0x54,
+                3: 0x2E,
+                4: 0x16,
+                5: 0xA9,
+                6: 0x72,
+                7: 0x4B,
+                8: 0x1B,
+                9: 0x5E,
+                10: 0x73,
+                11: 0x55,
+                12: 0x37,
+                13: 0x1D,
+                14: 0x4E,
+                15: 0x2B,
+                16: 0x13,
+                17: 0x7A,
+            });
+            const course_index = Number(COURSE_CODES.map(course_code))
+            this.publishProperty('course', COURSES.map(course_index))
         }
         else {
             console.log('[DEBUG] Unknown AABB packet for washer', buf.toString('hex'))
