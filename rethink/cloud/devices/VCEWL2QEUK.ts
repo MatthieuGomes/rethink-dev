@@ -299,11 +299,11 @@ export default class Device extends AABBDevice {
             this.publishProperty('prewash', options & 0x40 ? 'ON' : 'OFF')
             this.publishProperty('steam', options & 0x80 ? 'ON' : 'OFF')
             this.publishProperty('soil', SOIL_LEVELS.map(soil))
-        } else if ((buf.length === 13 || buf.length === 14) && buf[0] == 0x20) {
+        } else if ((buf.length === 14 || buf.length === 15) && buf[0] == 0x20) {
             console.log('[DEBUG] Power packet', buf.toString('hex'))
             const power_code = buf[9]
             if (power_code !== 0x00) {
-                this.publishProperty('power', 0x01 ? 'ON' : 'OFF')
+                this.publishProperty('power', buf[9] === 0x01 ? 'ON' : 'OFF')
             }
         } else if (buf.length === 142 && buf[0] == 0x20) {
             console.log('[DEBUG] Packet containing Infos', buf.toString('hex'))
