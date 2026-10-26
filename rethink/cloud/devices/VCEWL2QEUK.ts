@@ -299,68 +299,65 @@ export default class Device extends AABBDevice {
             this.publishProperty('prewash', options & 0x40 ? 'ON' : 'OFF')
             this.publishProperty('steam', options & 0x80 ? 'ON' : 'OFF')
             this.publishProperty('soil', SOIL_LEVELS.map(soil))
+        } else if ((buf.length === 13 || buf.length === 14) && buf[0] == 0x20) {
+            console.log('[DEBUG] Power packet', buf.toString('hex'))
+            const power_code = buf[9]
+            if (power_code !== 0x00) {
+                this.publishProperty('power', 0x01 ? 'ON' : 'OFF')
+            }
         } else if (buf.length === 142 && buf[0] == 0x20) {
             console.log('[DEBUG] Packet containing Infos', buf.toString('hex'))
             console.log('[DEBUG][INFO] Length', buf.length)
-            if (buf[91] === 0x63) {
-                console.log('[DEBUG][INFO] Power packet')
-                const status_code = buf[79]
-                const status = status_code > 0 ? 'Ready' : 'Off'
-                this.publishProperty('power', status_code > 0 ? 'ON' : 'OFF')
-                this.publishProperty('status', status)
-            }
-            else {
-                console.log('[DEBUG][INFO] Not a power packet', buf.toString('hex'))
-                const soil_code = buf[78]
-                console.log('[DEBUG][INFO][NO POWER] Soil code', soil_code)
-                const temperature_code = buf[79]
-                console.log('[DEBUG][INFO][NO POWER] Temperature code', temperature_code)
-                const rinse_code = buf[80]
-                console.log('[DEBUG][INFO][NO POWER] Rinse code', rinse_code)
-                const spin_code = buf[81]
-                console.log('[DEBUG][INFO][NO POWER] Spin code', spin_code)
-                const TEMP_CODES = Enum.of({
-                    404: 0x00,
-                    0: 0x08,
-                    1: 0x01,
-                    2: 0x02,
-                    3: 0x03,
-                    4: 0x05,
-                    5: 0x06,
-                });
-                const SPIN_CODES = Enum.of({
-                    404: 0x00,
-                    0: 0x00,
-                    1: 0x01,
-                    2: 0x04,
-                    3: 0x06,
-                    4: 0x08,
-                    5: 0x09,
-                });
-                const RINSE_CODES = Enum.of({
-                    404: 0x00,
-                    0: 0x00,
-                    1: 0x0E,
-                    2: 0x0F,
-                    3: 0x10,
-                    4: 0x12,
-                    5: 0x13,
-                });
-                const SOIL_CODES = Enum.of({
-                    404: 0x00,
-                    0: 0x01,
-                    1: 0x03,
-                    2: 0x05,
-                });
-                const temperature_index = Number(TEMP_CODES.map(temperature_code))
-                const spin_index = Number(SPIN_CODES.map(spin_code))
-                const rinse_index = Number(RINSE_CODES.map(rinse_code))
-                const soil_index = Number(SOIL_CODES.map(soil_code))
-                this.publishProperty('temp', TEMPERATURES.map(temperature_index))
-                this.publishProperty('spin', SPINS.map(spin_index))
-                this.publishProperty('soil', SOIL_LEVELS.map(soil_index))
-                this.publishProperty('rinse', RINSES.map(rinse_index))
-            }
+            console.log('[DEBUG][INFO] Not a power packet', buf.toString('hex'))
+            const soil_code = buf[78]
+            console.log('[DEBUG][INFO][NO POWER] Soil code', soil_code)
+            const temperature_code = buf[79]
+            console.log('[DEBUG][INFO][NO POWER] Temperature code', temperature_code)
+            const rinse_code = buf[80]
+            console.log('[DEBUG][INFO][NO POWER] Rinse code', rinse_code)
+            const spin_code = buf[81]
+            console.log('[DEBUG][INFO][NO POWER] Spin code', spin_code)
+            const TEMP_CODES = Enum.of({
+                404: 0x00,
+                0: 0x08,
+                1: 0x01,
+                2: 0x02,
+                3: 0x03,
+                4: 0x05,
+                5: 0x06,
+            });
+            const SPIN_CODES = Enum.of({
+                404: 0x00,
+                0: 0x00,
+                1: 0x01,
+                2: 0x04,
+                3: 0x06,
+                4: 0x08,
+                5: 0x09,
+            });
+            const RINSE_CODES = Enum.of({
+                404: 0x00,
+                0: 0x00,
+                1: 0x0E,
+                2: 0x0F,
+                3: 0x10,
+                4: 0x12,
+                5: 0x13,
+            });
+            const SOIL_CODES = Enum.of({
+                404: 0x00,
+                0: 0x01,
+                1: 0x03,
+                2: 0x05,
+            });
+            const temperature_index = Number(TEMP_CODES.map(temperature_code))
+            const spin_index = Number(SPIN_CODES.map(spin_code))
+            const rinse_index = Number(RINSE_CODES.map(rinse_code))
+            const soil_index = Number(SOIL_CODES.map(soil_code))
+            this.publishProperty('temp', TEMPERATURES.map(temperature_index))
+            this.publishProperty('spin', SPINS.map(spin_index))
+            this.publishProperty('soil', SOIL_LEVELS.map(soil_index))
+            this.publishProperty('rinse', RINSES.map(rinse_index))
             const course_code = buf[82]
             const COURSE_CODES = Enum.of({
                 404: 0x00,
