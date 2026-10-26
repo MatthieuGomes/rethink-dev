@@ -320,7 +320,7 @@ export default class Device extends AABBDevice {
     }
     processAABB(buf: Buffer) {
         const bufLength = buf.length
-        const programPacketLengths = [86, 88]
+        const programPacketLengths = [87, 89]
         const powerPacketLengths = [14, 15]
         const infoPacketLengths = [142]
         if (bufLength === 80 && buf[0] == 0x20) {
