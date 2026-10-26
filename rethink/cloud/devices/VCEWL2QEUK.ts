@@ -319,7 +319,11 @@ export default class Device extends AABBDevice {
         this.send(Buffer.from('F0ED1121010000001800', 'hex'))
     }
     processAABB(buf: Buffer) {
-        if (buf.length === 80 && buf[0] == 0x20) {
+        const bufLength = buf.length
+        const programPacketLengths = [86, 88]
+        const powerPacketLengths = [14, 15]
+        const infoPacketLengths = [142]
+        if (bufLength === 80 && buf[0] == 0x20) {
             console.log('[DEBUG] Old packet')
             console.log('[DEBUG][OLD] Length', buf.length)
             const time_remain = buf[44] * 60 + buf[45]
@@ -354,7 +358,7 @@ export default class Device extends AABBDevice {
             this.publishProperty('prewash', options & 0x40 ? 'ON' : 'OFF')
             this.publishProperty('steam', options & 0x80 ? 'ON' : 'OFF')
             this.publishProperty('soil', SOIL_LEVELS.map(soil))
-        } else if ((buf.length === 14 || buf.length === 15) && buf[0] == 0x20) {
+        } else if (powerPacketLengths.includes(bufLength) && buf[0] == 0x20) {
             console.log('[DEBUG] Power packet', buf.toString('hex'))
             const power_code = buf[9]
             if (power_code !== 0x00) {
@@ -365,9 +369,9 @@ export default class Device extends AABBDevice {
                 }
 
             }
-        } else if ((buf.length === 86 || buf.length === 88) && buf[0] === 0x20) {
+        } else if (programPacketLengths.includes(bufLength) && buf[0] === 0x20) {
             console.log('[DEBUG] Program Packet', buf.toString('hex'))
-            const offset = buf.length === 86 ? 0 : 2
+            const offset = bufLength === programPacketLengths[0] ? 0 : 2
             const course_byte = 28
             const spin_byte = 27
             const rinse_byte = 26
@@ -408,13 +412,12 @@ export default class Device extends AABBDevice {
                 this.publishProperty('prewash', 'OFF')
             }
 
-        } else if (buf.length === 142 && buf[0] == 0x20) {
+        } else if (infoPacketLengths.includes(bufLength) && buf[0] == 0x20) {
             console.log('[DEBUG] Packet containing Infos', buf.toString('hex'))
-            console.log('[DEBUG][INFO] Length', buf.length)
-        }
-        else {
+            console.log('[DEBUG][INFO] Length', bufLength)
+        } else {
             console.log('[DEBUG] Unknown AABB packet for washer', buf.toString('hex'))
-            console.log('[DEBUG][UNKNOWN] Length', buf.length)
+            console.log('[DEBUG][UNKNOWN] Length', bufLength)
         }
     }
 
