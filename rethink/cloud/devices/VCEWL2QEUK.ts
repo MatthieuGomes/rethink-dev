@@ -323,7 +323,7 @@ export default class Device extends AABBDevice {
                         unique_id: '$deviceid-prewash-select',
                         state_topic: '$this/prewash-select',
                         command_topic: '$this/prewash-select/set',
-                        name: 'Pre-wash',
+                        name: 'Pre-wash selection',
                         icon: 'mdi:water-sync',
                     },
                     steam_select: {
@@ -513,20 +513,22 @@ export default class Device extends AABBDevice {
         }
         console.log('[DEBUG] Published properties:', this.publishCache)
     }
-
+    SELECT_SETTABLE_PROPERTIES = ['temp-select', 'spin-select', 'rinse-select', 'soil-select', 'course-select', 'turbowash-select', 'prewash-select', 'steam-select']
     setProperty(prop: string, mqttValue: string) {
         // AA08F0A1010011BB what I send for power on
         // AA0DF0E5000201FF010200C4BB what I send for power off
         // AA09F0240101009CBB what is sent for power off
         // AA08F02A010098BB what is sent for power on
+        console.log('[DEBUG] Received property set', prop, mqttValue)
         if (prop === 'power') {
             if (mqttValue === 'ON') {
                 this.send(Buffer.from('F0A10100', 'hex'))
             } else if (mqttValue === 'OFF') {
                 this.send(Buffer.from('F0E5000201FF010200', 'hex'))
             }
-        } else if ((this.SETTABLE_PROPERTIES.map((p) => `${p}-select`)).includes(prop+'-select')) {
-            this.publishProperty(prop+'-select', mqttValue);
+        } else if ((this.SELECT_SETTABLE_PROPERTIES).includes(prop)) {
+            console.log('[DEBUG][SELECT] select property changed', prop, mqttValue)
+            this.publishProperty(prop, mqttValue);
             const currentState = this.publishCache
             const currentTemp = String(currentState.get('temp-select'))
             const currentSpin = String(currentState.get('spin-select'))
