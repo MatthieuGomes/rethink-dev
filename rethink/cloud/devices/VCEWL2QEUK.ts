@@ -310,11 +310,85 @@ export default class Device extends AABBDevice {
                         name: 'Steam',
                         icon: 'mdi:kettle-steam',
                     },
+                    turbowash_select: {
+                        platform: 'switch',
+                        unique_id: '$deviceid-turbowash-select',
+                        state_topic: '$this/turbowash-select',
+                        command_topic: '$this/turbowash-select/set',
+                        name: 'TurboWash selection',
+                        icon: 'mdi:rocket-launch',
+                    },
+                    prewash_select: {
+                        platform: 'switch',
+                        unique_id: '$deviceid-prewash-select',
+                        state_topic: '$this/prewash-select',
+                        command_topic: '$this/prewash-select/set',
+                        name: 'Pre-wash',
+                        icon: 'mdi:water-sync',
+                    },
+                    steam_select: {
+                        platform: 'switch',
+                        unique_id: '$deviceid-steam-select',
+                        state_topic: '$this/steam-select',
+                        command_topic: '$this/steam-select/set',
+                        name: 'Steam selection',
+                        icon: 'mdi:kettle-steam',
+                    },
+                    course_select: {
+                        platform: 'select',
+                        unique_id: '$deviceid-course-select',
+                        state_topic: '$this/course-select',
+                        command_topic: '$this/course-select/set',
+                        name: 'Course selection',
+                        icon: 'mdi:pin-outline',
+                        device_class: 'enum',
+                        options: COURSES.options,
+                    },
+                    temp_select: {
+                        platform: 'select',
+                        unique_id: '$deviceid-temp-select',
+                        state_topic: '$this/temp-select',
+                        command_topic: '$this/temp-select/set',
+                        name: 'Temperature selection',
+                        device_class: 'enum',
+                        options: TEMPERATURES.options,
+                    },
+                    spin_select: {
+                        platform: 'select',
+                        unique_id: '$deviceid-spin-select',
+                        state_topic: '$this/spin-select',
+                        command_topic: '$this/spin-select/set',
+                        name: 'Spin selection',
+                        icon: 'mdi:autorenew',
+                        device_class: 'enum',
+                        options: SPINS.options,
+                    },
+                    rinse_select: {
+                        platform: 'select',
+                        unique_id: '$deviceid-rinse-select',
+                        state_topic: '$this/rinse-select',
+                        command_topic: '$this/rinse-select/set',
+                        name: 'Rinse selection',
+                        icon: 'mdi:water',
+                        device_class: 'enum',
+                        options: RINSES.options,
+                    },
+                    soil_select: {
+                        platform: 'select',
+                        unique_id: '$deviceid-soil-select',
+                        state_topic: '$this/soil-select',
+                        command_topic: '$this/soil-select/set',
+                        name: 'Soil level selection',
+                        icon: 'mdi:washing-machine',
+                        device_class: 'enum',
+                        options: SOIL_LEVELS.options,
+                    },
                 },
             }),
         )
     }
 
+    SETTABLE_PROPERTIES = ['temp', 'spin', 'rinse', 'soil', 'course', 'turbowash', 'prewash', 'steam']
     start() {
         this.send(Buffer.from('F0ED1121010000001800', 'hex'))
     }
@@ -392,28 +466,42 @@ export default class Device extends AABBDevice {
             const temp_index = Number(TEMP_CODES.map(temp_code))
             const soil_index = Number(SOIL_CODES.map(soil_code))
             this.publishProperty('steam', vapor_code === 0x10 ? 'ON' : 'OFF')
+            this.publishProperty('steam_select', vapor_code === 0x10 ? 'ON' : 'OFF')
             this.publishProperty('course', COURSES.map(course_index))
+            this.publishProperty('course_select', COURSES.map(course_index))
             this.publishProperty('spin', SPINS.map(spin_index))
+            this.publishProperty('spin_select', SPINS.map(spin_index))
             this.publishProperty('rinse', RINSES.map(rinse_index))
+            this.publishProperty('rinse_select', RINSES.map(rinse_index))
             this.publishProperty('temp', TEMPERATURES.map(temp_index))
+            this.publishProperty('temp_select', TEMPERATURES.map(temp_index))
             this.publishProperty('soil', SOIL_LEVELS.map(soil_index))
+            this.publishProperty('soil_select', SOIL_LEVELS.map(soil_index))
             if (turbowash_n_prewash_code !== 0x00) {
                 if (turbowash_n_prewash_code === 0x20) {
                     this.publishProperty('turbowash', 'ON')
+                    this.publishProperty('turbowash-select', 'ON')
                     this.publishProperty('prewash', 'OFF')
+                    this.publishProperty('prewash-select', 'OFF')
                 }
                 else if (turbowash_n_prewash_code === 0x40) {
                     this.publishProperty('turbowash', 'OFF')
+                    this.publishProperty('turbowash-select', 'OFF')
                     this.publishProperty('prewash', 'ON')
+                    this.publishProperty('prewash-select', 'ON')
                 }
                 else {
                     this.publishProperty('turbowash', 'ON')
+                    this.publishProperty('turbowash-select', 'ON')
                     this.publishProperty('prewash', 'ON')
+                    this.publishProperty('prewash-select', 'ON')
                 }
             }
             else {
                 this.publishProperty('turbowash', 'OFF')
+                this.publishProperty('turbowash-select', 'OFF')
                 this.publishProperty('prewash', 'OFF')
+                this.publishProperty('prewash-select', 'OFF')
             }
 
         } else if (infoPacketLengths.includes(bufLength) && buf[0] == 0x20) {
@@ -437,6 +525,32 @@ export default class Device extends AABBDevice {
             } else if (mqttValue === 'OFF') {
                 this.send(Buffer.from('F0E5000201FF010200', 'hex'))
             }
+        } else if ((this.SETTABLE_PROPERTIES.map((p) => `${p}-select`)).includes(prop+'-select')) {
+            this.publishProperty(prop+'-select', mqttValue);
+            const currentState = this.publishCache
+            const currentTemp = String(currentState.get('temp-select'))
+            const currentSpin = String(currentState.get('spin-select'))
+            const currentRinse = String(currentState.get('rinse-select'))
+            const currentSoil = String(currentState.get('soil-select'))
+            const currentCourse = String(currentState.get('course-select'))
+            const currentTurbowash = String(currentState.get('turbowash-select'))
+            const currentPrewash = String(currentState.get('prewash-select'))
+            const currentSteam = String(currentState.get('steam-select'))
+            const course_index = COURSES.unmap(currentCourse || 'Not Specified')
+            const temp_index = TEMPERATURES.unmap(currentTemp || 'Not specified')
+            const spin_index = SPINS.unmap(currentSpin || 'Not specified')
+            const rinse_index = RINSES.unmap(currentRinse || 'Not specified')
+            const soil_index = SOIL_LEVELS.unmap(currentSoil || 'Not specified')
+            const temp_code = TEMP_CODES.map(Number(temp_index))
+            const spin_code = SPIN_CODES.map(Number(spin_index))
+            const rinse_code = RINSE_CODES.map(Number(rinse_index))
+            const soil_code = SOIL_CODES.map(Number(soil_index))
+            const course_code = COURSE_CODES.map(Number(course_index))
+            const turbowash_code = currentTurbowash === 'ON' ? 0x01 : 0x00
+            const prewash_code = currentPrewash === 'ON' ? 0x01 : 0x00
+            const steam_code = currentSteam === 'ON' ? 0x01 : 0x00
+            const message = `F0E5000201FF090A${course_code}1E${soil_code}20${rinse_code}21${spin_code}IF${temp_code}3E${steam_code}35${turbowash_code}34${prewash_code}7F0000`
+            console.log('[DEBUG] Sending message to change program on whasing machine', message)
         }
 
         if (prop === 'pause') this.send(Buffer.from('F024040100', 'hex'))
