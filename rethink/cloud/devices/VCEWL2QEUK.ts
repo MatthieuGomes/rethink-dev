@@ -423,6 +423,7 @@ export default class Device extends AABBDevice {
             console.log('[DEBUG] Unknown AABB packet for washer', buf.toString('hex'))
             console.log('[DEBUG][UNKNOWN] Length', bufLength)
         }
+        console.log('[DEBUG] Published properties:', this.publishCache)
     }
 
     setProperty(prop: string, mqttValue: string) {
