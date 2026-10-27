@@ -530,6 +530,7 @@ export default class Device extends AABBDevice {
             console.log('[DEBUG][SELECT] select property changed', prop, mqttValue)
             this.publishProperty(prop, mqttValue);
             const currentState = this.publishCache
+            console.log('[DEBUG][SELECT] Current state', currentState)
             const currentTemp = String(currentState.get('temp-select'))
             const currentSpin = String(currentState.get('spin-select'))
             const currentRinse = String(currentState.get('rinse-select'))
@@ -551,9 +552,9 @@ export default class Device extends AABBDevice {
             const soil_code = SOIL_CODES.map(Number(soil_index))
             const course_code = COURSE_CODES.map(Number(course_index))
             console.log('[DEBUG][SELECT] Course code', course_code, 'temp code', temp_code, 'spin code', spin_code, 'rinse code', rinse_code, 'soil code', soil_code)
-            const turbowash_code = currentTurbowash === 'ON' ? 0x01 : 0x00
-            const prewash_code = currentPrewash === 'ON' ? 0x01 : 0x00
-            const steam_code = currentSteam === 'ON' ? 0x01 : 0x00
+            const turbowash_code = (currentTurbowash === 'ON' ? 0x01 : 0x00).toString(16)
+            const prewash_code = (currentPrewash === 'ON' ? 0x01 : 0x00).toString(16)
+            const steam_code = (currentSteam === 'ON' ? 0x01 : 0x00).toString(16)
             console.log('[DEBUG][SELECT] Turbowash code', turbowash_code, 'prewash code', prewash_code, 'steam code', steam_code)
             const message = `F0E5000201FF090A${course_code}1E${soil_code}20${rinse_code}21${spin_code}IF${temp_code}3E${steam_code}35${turbowash_code}34${prewash_code}7F0000`
             console.log('[DEBUG] Sending message to change program on whasing machine', message)
