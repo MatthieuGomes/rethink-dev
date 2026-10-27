@@ -390,7 +390,6 @@ export default class Device extends AABBDevice {
 
     SETTABLE_PROPERTIES = ['temp', 'spin', 'rinse', 'soil', 'course', 'turbowash', 'prewash', 'steam']
     start() {
-        // this.send(Buffer.from('F0ED1121010000001800', 'hex'))
         this.send(Buffer.from('F0E5000201FF00', 'hex'))
     }
     processAABB(buf: Buffer) {
@@ -439,6 +438,7 @@ export default class Device extends AABBDevice {
             if (power_code !== 0x00) {
                 if (power_code === 0x01) {
                     this.publishProperty('power', 'ON')
+                    this.send(Buffer.from('F0E5000201FF00', 'hex'))
                 } else {
                     this.publishProperty('power', 'OFF')
                 }
@@ -583,7 +583,6 @@ export default class Device extends AABBDevice {
         if (prop === 'power') {
             if (mqttValue === 'ON') {
                 this.send(Buffer.from('F0A10100', 'hex'))
-                this.send(Buffer.from('F0E5000201FF00', 'hex'))
             } else if (mqttValue === 'OFF') {
                 this.send(Buffer.from('F0E5000201FF010200', 'hex'))
             }
