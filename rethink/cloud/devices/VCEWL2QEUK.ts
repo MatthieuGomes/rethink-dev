@@ -402,8 +402,12 @@ export default class Device extends AABBDevice {
                     this.publishProperty('turbowash', 'ON')
                     this.publishProperty('prewash', 'OFF')
                 }
-                else {
+                else if (turbowash_n_prewash_code === 0x40) {
                     this.publishProperty('turbowash', 'OFF')
+                    this.publishProperty('prewash', 'ON')
+                }
+                else {
+                    this.publishProperty('turbowash', 'ON')
                     this.publishProperty('prewash', 'ON')
                 }
             }
