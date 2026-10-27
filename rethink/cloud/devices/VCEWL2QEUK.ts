@@ -390,7 +390,8 @@ export default class Device extends AABBDevice {
 
     SETTABLE_PROPERTIES = ['temp', 'spin', 'rinse', 'soil', 'course', 'turbowash', 'prewash', 'steam']
     start() {
-        this.send(Buffer.from('F0ED1121010000001800', 'hex'))
+        // this.send(Buffer.from('F0ED1121010000001800', 'hex'))
+        this.send(Buffer.from('F0E5000201FF00', 'hex'))
     }
     processAABB(buf: Buffer) {
         const bufLength = buf.length
@@ -504,6 +505,65 @@ export default class Device extends AABBDevice {
                 this.publishProperty('prewash-select', 'OFF')
             }
 
+        } else if (bufLength === 17 && buf[0] === 0x20) {
+            console.log('[DEBUG] Same Property Packet', buf.toString('hex'))
+            const course_byte = 12
+            const spin_byte = 11
+            const rinse_byte = 10
+            const temp_byte = 9
+            const soil_byte = 8
+            const vapor_byte = 42
+            const turbowash_n_prewash_byte = 41
+            const course_code = buf[course_byte]
+            const spin_code = buf[spin_byte]
+            const rinse_code = buf[rinse_byte]
+            const temp_code = buf[temp_byte]
+            const soil_code = buf[soil_byte]
+            const vapor_code = buf[vapor_byte]
+            const turbowash_n_prewash_code = buf[turbowash_n_prewash_byte]
+            const course_index = Number(COURSE_CODES.map(course_code))
+            const spin_index = Number(SPIN_CODES.map(spin_code))
+            const rinse_index = Number(RINSE_CODES.map(rinse_code))
+            const temp_index = Number(TEMP_CODES.map(temp_code))
+            const soil_index = Number(SOIL_CODES.map(soil_code))
+            this.publishProperty('steam', vapor_code === 0x10 ? 'ON' : 'OFF')
+            this.publishProperty('steam-select', vapor_code === 0x10 ? 'ON' : 'OFF')
+            this.publishProperty('course', COURSES.map(course_index))
+            this.publishProperty('course-select', COURSES.map(course_index))
+            this.publishProperty('spin', SPINS.map(spin_index))
+            this.publishProperty('spin-select', SPINS.map(spin_index))
+            this.publishProperty('rinse', RINSES.map(rinse_index))
+            this.publishProperty('rinse-select', RINSES.map(rinse_index))
+            this.publishProperty('temp', TEMPERATURES.map(temp_index))
+            this.publishProperty('temp-select', TEMPERATURES.map(temp_index))
+            this.publishProperty('soil', SOIL_LEVELS.map(soil_index))
+            this.publishProperty('soil-select', SOIL_LEVELS.map(soil_index))
+            if (turbowash_n_prewash_code !== 0x00) {
+                if (turbowash_n_prewash_code === 0x20) {
+                    this.publishProperty('turbowash', 'ON')
+                    this.publishProperty('turbowash-select', 'ON')
+                    this.publishProperty('prewash', 'OFF')
+                    this.publishProperty('prewash-select', 'OFF')
+                }
+                else if (turbowash_n_prewash_code === 0x40) {
+                    this.publishProperty('turbowash', 'OFF')
+                    this.publishProperty('turbowash-select', 'OFF')
+                    this.publishProperty('prewash', 'ON')
+                    this.publishProperty('prewash-select', 'ON')
+                }
+                else {
+                    this.publishProperty('turbowash', 'ON')
+                    this.publishProperty('turbowash-select', 'ON')
+                    this.publishProperty('prewash', 'ON')
+                    this.publishProperty('prewash-select', 'ON')
+                }
+            }
+            else {
+                this.publishProperty('turbowash', 'OFF')
+                this.publishProperty('turbowash-select', 'OFF')
+                this.publishProperty('prewash', 'OFF')
+                this.publishProperty('prewash-select', 'OFF')
+            }
         } else if (infoPacketLengths.includes(bufLength) && buf[0] == 0x20) {
             console.log('[DEBUG] Packet containing Infos', buf.toString('hex'))
             console.log('[DEBUG][INFO] Length', bufLength)
@@ -523,6 +583,7 @@ export default class Device extends AABBDevice {
         if (prop === 'power') {
             if (mqttValue === 'ON') {
                 this.send(Buffer.from('F0A10100', 'hex'))
+                this.send(Buffer.from('F0E5000201FF00', 'hex'))
             } else if (mqttValue === 'OFF') {
                 this.send(Buffer.from('F0E5000201FF010200', 'hex'))
             }
