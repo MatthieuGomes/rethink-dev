@@ -538,19 +538,23 @@ export default class Device extends AABBDevice {
             const currentTurbowash = String(currentState.get('turbowash-select'))
             const currentPrewash = String(currentState.get('prewash-select'))
             const currentSteam = String(currentState.get('steam-select'))
+            console.log('[DEBUG][SELECT] Current temp', currentTemp, 'spin', currentSpin, 'rinse', currentRinse, 'soil', currentSoil, 'course', currentCourse, 'turbowash', currentTurbowash, 'prewash', currentPrewash, 'steam', currentSteam)
             const course_index = COURSES.unmap(currentCourse || 'Not Specified')
             const temp_index = TEMPERATURES.unmap(currentTemp || 'Not specified')
             const spin_index = SPINS.unmap(currentSpin || 'Not specified')
             const rinse_index = RINSES.unmap(currentRinse || 'Not specified')
             const soil_index = SOIL_LEVELS.unmap(currentSoil || 'Not specified')
+            console.log('[DEBUG][SELECT] Course index', course_index, 'temp index', temp_index, 'spin index', spin_index, 'rinse index', rinse_index, 'soil index', soil_index)
             const temp_code = TEMP_CODES.map(Number(temp_index))
             const spin_code = SPIN_CODES.map(Number(spin_index))
             const rinse_code = RINSE_CODES.map(Number(rinse_index))
             const soil_code = SOIL_CODES.map(Number(soil_index))
             const course_code = COURSE_CODES.map(Number(course_index))
+            console.log('[DEBUG][SELECT] Course code', course_code, 'temp code', temp_code, 'spin code', spin_code, 'rinse code', rinse_code, 'soil code', soil_code)
             const turbowash_code = currentTurbowash === 'ON' ? 0x01 : 0x00
             const prewash_code = currentPrewash === 'ON' ? 0x01 : 0x00
             const steam_code = currentSteam === 'ON' ? 0x01 : 0x00
+            console.log('[DEBUG][SELECT] Turbowash code', turbowash_code, 'prewash code', prewash_code, 'steam code', steam_code)
             const message = `F0E5000201FF090A${course_code}1E${soil_code}20${rinse_code}21${spin_code}IF${temp_code}3E${steam_code}35${turbowash_code}34${prewash_code}7F0000`
             console.log('[DEBUG] Sending message to change program on whasing machine', message)
         }
