@@ -34,7 +34,7 @@ const TEMPERATURES = Enum.of({
     '30°C': 2,
     '40°C': 3,
     '60°C': 4,
-    '90°C': 5,
+    '95°C': 5,
 })
 
 const SPINS = Enum.of({
