@@ -7,6 +7,337 @@ import { allowExtendedType } from '@/util/casting'
 import AABBDevice from './aabb_device'
 import { ERRORS, STATES } from './washer_common'
 
+const program_availabilities = {
+    1: {
+        temp: [0, 1, 2, 3],
+        spin: [0, 1, 2, 3],
+        rinse: [0, 1, 2, 3, 4, 5],
+        soil: [0, 1, 2],
+        turbowash: [0, 1],
+        prewash: [0],
+        steam: [0]
+    },
+    2: {
+        temp: [0, 1, 2, 3, 4, 5],
+        spin: [0, 1, 2, 3, 4, 5],
+        rinse: [0, 1, 2, 3, 4, 5],
+        soil: [0, 1, 2],
+        turbowash: [0, 1],
+        prewash: [0, 1],
+        steam: [0, 1]
+    },
+    3: {
+        temp: [0, 1, 2, 3, 4, 5],
+        spin: [0, 1, 2, 3, 4, 5],
+        rinse: [0, 1, 2, 3, 4, 5],
+        soil: [0, 1, 2],
+        turbowash: [0, 1],
+        prewash: [0, 1],
+        steam: [0, 1]
+    },
+    4: {
+        temp: [0, 1, 2, 3],
+        spin: [0, 1, 2],
+        rinse: [0, 1, 2, 3, 4, 5],
+        soil: [1, 2],
+        turbowash: [0, 1],
+        prewash: [0],
+        steam: [0]
+    },
+    5: {
+        temp: [4],
+        spin: [0, 1, 2, 3, 4, 5],
+        rinse: [0, 1, 2, 3, 4, 5],
+        soil: [0, 1, 2],
+        turbowash: [0, 1],
+        prewash: [0, 1],
+        steam: [0, 1]
+    },
+    6: {
+        temp: [0, 1, 2, 3, 4],
+        spin: [0, 1, 2, 3, 4, 5],
+        rinse: [0, 1, 2, 3, 4, 5],
+        soil: [1],
+        turbowash: [0],
+        prewash: [0],
+        steam: [0, 1]
+    },
+    7: {
+        temp: [1, 2, 3],
+        spin: [1, 2, 3, 4, 5],
+        rinse: [1, 2, 3],
+        soil: [1],
+        turbowash: [1],
+        prewash: [0],
+        steam: [0]
+    },
+    8: {
+        temp: [0, 1, 2, 3],
+        spin: [0, 1, 2, 3, 4, 5],
+        rinse: [0, 1, 2, 3],
+        soil: [0, 1, 2],
+        turbowash: [0, 1],
+        prewash: [0],
+        steam: [0]
+    },
+    9: {
+        temp: [0, 1, 2, 3],
+        spin: [0, 1, 2],
+        rinse: [0, 1, 2, 3, 4, 5],
+        soil: [1, 2],
+        turbowash: [0],
+        prewash: [0],
+        steam: [0]
+    },
+    10: {
+        temp: [0, 1, 2, 3],
+        spin: [0, 1, 2, 3, 4, 5],
+        rinse: [0, 1, 2, 3],
+        soil: [0, 1, 2],
+        turbowash: [0],
+        prewash: [0],
+        steam: [0]
+    },
+    11: {
+        temp: [404],
+        spin: [404],
+        rinse: [404],
+        soil: [404],
+        turbowash: [0],
+        prewash: [0],
+        steam: [0]
+    },
+    12: {
+        temp: [404],
+        spin: [1, 2, 3, 4, 5],
+        rinse: [1, 2, 3, 4, 5],
+        soil: [404],
+        turbowash: [0],
+        prewash: [0],
+        steam: [0]
+    },
+    13: {
+        temp: [0, 1, 2, 3, 4],
+        spin: [0, 1, 2, 3, 4, 5],
+        rinse: [0, 1, 2, 3, 4, 5],
+        soil: [0, 1, 2],
+        turbowash: [0, 1],
+        prewash: [0, 1],
+        steam: [0, 1]
+    },
+    14: {
+        temp: [404],
+        spin: [1, 2, 3, 4, 5],
+        rinse: [0],
+        soil: [404],
+        turbowash: [0],
+        prewash: [0],
+        steam: [0]
+    },
+    15: {
+        temp: [0, 1, 2, 3, 4],
+        spin: [0, 1, 2, 3, 4, 5],
+        rinse: [0, 1, 2, 3, 4, 5],
+        soil: [0, 1, 2],
+        turbowash: [0, 1],
+        prewash: [0, 1],
+        steam: [0, 1]
+    },
+    16: {
+        temp: [404],
+        spin: [0, 1, 2, 3, 4, 5],
+        rinse: [0, 1, 2, 3, 4, 5],
+        soil: [1, 2],
+        turbowash: [0, 1],
+        prewash: [0, 1],
+        steam: [0]
+    },
+    17: {
+        temp: [0, 1, 2, 3, 4],
+        spin: [1, 2, 3, 4, 5],
+        rinse: [1, 2, 3, 4, 5],
+        soil: [1],
+        turbowash: [1],
+        prewash: [0, 1],
+        steam: [0, 1]
+    },
+}
+
+const conditional_params = {
+    prewash: {
+        steam: 0
+    },
+    steam: {
+        prewash: 0
+    },
+    turbowash: {
+        rinse: 1,
+        spin: 1,
+    }
+};
+
+const forced_params = {
+    steam: {
+        temp: 4,
+    }
+}
+
+const default_params = {
+    1: {
+        temp: 0,
+        spin: 3,
+        rinse: 1,
+        soil: 1,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    2: {
+        temp: 3,
+        spin: 5,
+        rinse: 1,
+        soil: 1,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    3: {
+        temp: 3,
+        spin: 5,
+        rinse: 1,
+        soil: 1,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    4: {
+        temp: 1,
+        spin: 2,
+        rinse: 1,
+        soil: 1,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    5: {
+        temp: 4,
+        spin: 5,
+        rinse: 1,
+        soil: 1,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    6: {
+        temp: 3,
+        spin: 5,
+        rinse: 1,
+        soil: 1,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    7: {
+        temp: 1,
+        spin: 1,
+        rinse: 1,
+        soil: 1,
+        turbowash: 1,
+        prewash: 0,
+        steam: 0
+    },
+    8: {
+        temp: 0,
+        spin: 3,
+        rinse: 1,
+        soil: 1,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    9: {
+        temp: 2,
+        spin: 2,
+        rinse: 1,
+        soil: 1,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    10: {
+        temp: 1,
+        spin: 2,
+        rinse: 1,
+        soil: 1,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    11: {
+        temp: 404,
+        spin: 404,
+        rinse: 404,
+        soil: 404,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    12: {
+        temp: 404,
+        spin: 5,
+        rinse: 1,
+        soil: 404,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    13: {
+        temp: 3,
+        spin: 5,
+        rinse: 1,
+        soil: 1,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    14: {
+        temp: 404,
+        spin: 5,
+        rinse: 0,
+        soil: 404,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    15: {
+        temp: 3,
+        spin: 3,
+        rinse: 1,
+        soil: 1,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    16: {
+        temp: 404,
+        spin: 5,
+        rinse: 1,
+        soil: 1,
+        turbowash: 0,
+        prewash: 0,
+        steam: 0
+    },
+    17: {
+        temp: 3,
+        spin: 4,
+        rinse: 1,
+        soil: 1,
+        turbowash: 1,
+        prewash: 0,
+        steam: 0
+    },
+}
+
 const COURSES = Enum.of({
     'Not Specified': 404,
     'Bed Sheets': 1,
@@ -607,17 +938,17 @@ export default class Device extends AABBDevice {
             }
         } else if ((this.SELECT_SETTABLE_PROPERTIES).includes(prop)) {
             this.publishProperty(prop, mqttValue);
-        } 
+        }
         else if ((this.SETTABLE_PROPERTIES).includes(prop)) {
             const currentState = this.publishCache
-            const currentTemp = String( prop=="temp" ? mqttValue : currentState.get('temp'))
-            const currentSpin = String( prop=="spin" ? mqttValue : currentState.get('spin'))
-            const currentRinse = String (prop=="rinse" ? mqttValue : currentState.get('rinse'))
-            const currentSoil = String( prop=="soil" ? mqttValue : currentState.get('soil'))
-            const currentCourse = String( prop=="course" ? mqttValue : currentState.get('course'))
-            const currentTurbowash = String( prop=="turbowash" ? mqttValue : currentState.get('turbowash'))
-            const currentPrewash = String( prop=="prewash" ? mqttValue : currentState.get('prewash'))
-            const currentSteam = String( prop=="steam" ? mqttValue : currentState.get('steam'))
+            const currentTemp = String(prop == "temp" ? mqttValue : currentState.get('temp'))
+            const currentSpin = String(prop == "spin" ? mqttValue : currentState.get('spin'))
+            const currentRinse = String(prop == "rinse" ? mqttValue : currentState.get('rinse'))
+            const currentSoil = String(prop == "soil" ? mqttValue : currentState.get('soil'))
+            const currentCourse = String(prop == "course" ? mqttValue : currentState.get('course'))
+            const currentTurbowash = String(prop == "turbowash" ? mqttValue : currentState.get('turbowash'))
+            const currentPrewash = String(prop == "prewash" ? mqttValue : currentState.get('prewash'))
+            const currentSteam = String(prop == "steam" ? mqttValue : currentState.get('steam'))
             console.log('[DEBUG][SELECT] Current temp', currentTemp, 'spin', currentSpin, 'rinse', currentRinse, 'soil', currentSoil, 'course', currentCourse, 'turbowash', currentTurbowash, 'prewash', currentPrewash, 'steam', currentSteam)
             const course_index = COURSES.unmap(currentCourse || 'Not Specified')
             const temp_index = TEMPERATURES.unmap(currentTemp || 'Not specified')
