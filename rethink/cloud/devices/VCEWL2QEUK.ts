@@ -406,8 +406,6 @@ export default class Device extends AABBDevice {
             }),
         )
     }
-
-    SETTABLE_PROPERTIES = ['temp', 'spin', 'rinse', 'soil', 'course', 'turbowash', 'prewash', 'steam']
     start() {
         console.log(["DEBUG] Starting"])
         this.send(Buffer.from('F0E5000201FF00', 'hex'))
@@ -462,7 +460,6 @@ export default class Device extends AABBDevice {
                 } else {
                     this.publishProperty('power', 'OFF')
                 }
-
             }
         } else if (programPacketLengths.includes(bufLength) && buf[0] === 0x20) {
             console.log('[DEBUG] Program Packet', buf.toString('hex'))
@@ -594,6 +591,7 @@ export default class Device extends AABBDevice {
         console.log('[DEBUG] Published properties:', this.publishCache)
     }
     SELECT_SETTABLE_PROPERTIES = ['temp-select', 'spin-select', 'rinse-select', 'soil-select', 'course-select', 'turbowash-select', 'prewash-select', 'steam-select']
+    SETTABLE_PROPERTIES = ['temp', 'spin', 'rinse', 'soil', 'course', 'turbowash', 'prewash', 'steam']
     setProperty(prop: string, mqttValue: string) {
         // AA08F0A1010011BB what I send for power on
         // AA0DF0E5000201FF010200C4BB what I send for power off
@@ -608,18 +606,18 @@ export default class Device extends AABBDevice {
                 this.send(Buffer.from('F0E5000201FF010200', 'hex'))
             }
         } else if ((this.SELECT_SETTABLE_PROPERTIES).includes(prop)) {
-            console.log('[DEBUG][SELECT] select property changed', prop, mqttValue)
             this.publishProperty(prop, mqttValue);
+        } 
+        else if ((this.SETTABLE_PROPERTIES).includes(prop)) {
             const currentState = this.publishCache
-            console.log('[DEBUG][SELECT] Current state', currentState)
-            const currentTemp = String(currentState.get('temp-select'))
-            const currentSpin = String(currentState.get('spin-select'))
-            const currentRinse = String(currentState.get('rinse-select'))
-            const currentSoil = String(currentState.get('soil-select'))
-            const currentCourse = String(currentState.get('course-select'))
-            const currentTurbowash = String(currentState.get('turbowash-select'))
-            const currentPrewash = String(currentState.get('prewash-select'))
-            const currentSteam = String(currentState.get('steam-select'))
+            const currentTemp = String( prop=="temp" ? mqttValue : currentState.get('temp'))
+            const currentSpin = String( prop=="spin" ? mqttValue : currentState.get('spin'))
+            const currentRinse = String (prop=="rinse" ? mqttValue : currentState.get('rinse'))
+            const currentSoil = String( prop=="soil" ? mqttValue : currentState.get('soil'))
+            const currentCourse = String( prop=="course" ? mqttValue : currentState.get('course'))
+            const currentTurbowash = String( prop=="turbowash" ? mqttValue : currentState.get('turbowash'))
+            const currentPrewash = String( prop=="prewash" ? mqttValue : currentState.get('prewash'))
+            const currentSteam = String( prop=="steam" ? mqttValue : currentState.get('steam'))
             console.log('[DEBUG][SELECT] Current temp', currentTemp, 'spin', currentSpin, 'rinse', currentRinse, 'soil', currentSoil, 'course', currentCourse, 'turbowash', currentTurbowash, 'prewash', currentPrewash, 'steam', currentSteam)
             const course_index = COURSES.unmap(currentCourse || 'Not Specified')
             const temp_index = TEMPERATURES.unmap(currentTemp || 'Not specified')
@@ -638,7 +636,8 @@ export default class Device extends AABBDevice {
             const steam_code = (currentSteam === 'ON' ? 0x01 : 0x00).toString(16).padStart(2, '0').toUpperCase();
             console.log('[DEBUG][SELECT] Turbowash code', turbowash_code, '| prewash code', prewash_code, '| steam code', steam_code)
             const message = `F0E5000201FF090A${course_code}1E${soil_code}20${rinse_code}21${spin_code}1F${temp_code}3E${steam_code}35${turbowash_code}34${prewash_code}7F0000`
-        } else if (prop === 'send_selected') {
+        }
+        else if (prop === 'send_selected') {
             const currentState = this.publishCache
             const currentTemp = String(currentState.get('temp-select'))
             const currentSpin = String(currentState.get('spin-select'))
