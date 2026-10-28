@@ -1,6 +1,6 @@
 # Add-on identity
 name: Rethink - Dev
-version: '0.1.2.6.12'
+version: '0.1.2.6.13'
 slug: rethink
 description: Cloud-free support for LG ThinQ appliances - for developping appliance intégration in Home Assistant. This add-on is not intended for end-users, and may be unstable.
 url: https://github.com/MatthieuGomes/rethink-dev
