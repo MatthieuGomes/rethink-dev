@@ -406,7 +406,7 @@ const TEMP_CODES = Enum.of({
 });
 const SPIN_CODES = Enum.of({
     404: 0xFF,
-    0: 0x00,
+    0: 0x0C,
     1: 0x01,
     2: 0x04,
     3: 0x06,
