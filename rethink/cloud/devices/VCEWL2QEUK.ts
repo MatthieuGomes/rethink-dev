@@ -390,7 +390,9 @@ export default class Device extends AABBDevice {
 
     SETTABLE_PROPERTIES = ['temp', 'spin', 'rinse', 'soil', 'course', 'turbowash', 'prewash', 'steam']
     start() {
+        console.log(["DEBUG] Starting"])
         this.send(Buffer.from('F0E5000201FF00', 'hex'))
+
     }
     processAABB(buf: Buffer) {
         const bufLength = buf.length
@@ -505,7 +507,7 @@ export default class Device extends AABBDevice {
                 this.publishProperty('prewash-select', 'OFF')
             }
 
-        } else if (bufLength === 17 && buf[0] === 0x20) {
+        } else if (bufLength === 71 && buf[0] === 0x20) {
             console.log('[DEBUG] Same Property Packet', buf.toString('hex'))
             const course_byte = 12
             const spin_byte = 11
@@ -582,6 +584,7 @@ export default class Device extends AABBDevice {
         console.log('[DEBUG] Received property set', prop, mqttValue)
         if (prop === 'power') {
             if (mqttValue === 'ON') {
+                console.log('[DEBUG] Sending power on command')
                 this.send(Buffer.from('F0A10100', 'hex'))
             } else if (mqttValue === 'OFF') {
                 this.send(Buffer.from('F0E5000201FF010200', 'hex'))
