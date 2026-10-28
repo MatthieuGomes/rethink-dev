@@ -180,6 +180,7 @@ export default class Device extends AABBDevice {
                         platform: 'select',
                         unique_id: '$deviceid-course',
                         state_topic: '$this/course',
+                        command_topic: '$this/course/set',
                         name: 'Course',
                         icon: 'mdi:pin-outline',
                     },
@@ -187,6 +188,7 @@ export default class Device extends AABBDevice {
                         platform: 'select',
                         unique_id: '$deviceid-temp',
                         state_topic: '$this/temp',
+                        command_topic: '$this/temp/set',
                         name: 'Temperature',
                         device_class: 'enum',
                         options: TEMPERATURES.options,
@@ -195,13 +197,14 @@ export default class Device extends AABBDevice {
                         platform: 'select',
                         unique_id: '$deviceid-spin',
                         state_topic: '$this/spin',
+                        command_topic: '$this/spin/set',
                         name: 'Spin',
                         icon: 'mdi:autorenew',
                         device_class: 'enum',
                         options: SPINS.options,
                     },
                     cycles: {
-                        platform: 'select',
+                        platform: 'sensor',
                         unique_id: '$deviceid-cycles',
                         state_topic: '$this/cycles',
                         name: 'Cycle count',
@@ -267,6 +270,7 @@ export default class Device extends AABBDevice {
                         platform: 'select',
                         unique_id: '$deviceid-rinse',
                         state_topic: '$this/rinse',
+                        command_topic: '$this/rinse/set',
                         name: 'Rinse',
                         icon: 'mdi:water',
                         device_class: 'enum',
@@ -283,6 +287,7 @@ export default class Device extends AABBDevice {
                         platform: 'switch',
                         unique_id: '$deviceid-turbowash',
                         state_topic: '$this/turbowash',
+                        command_topic: '$this/turbowash/set',
                         name: 'TurboWash',
                         icon: 'mdi:rocket-launch',
                     },
@@ -290,6 +295,7 @@ export default class Device extends AABBDevice {
                         platform: 'switch',
                         unique_id: '$deviceid-prewash',
                         state_topic: '$this/prewash',
+                        command_topic: '$this/prewash/set',
                         name: 'Pre-wash',
                         icon: 'mdi:water-sync',
                     },
@@ -297,6 +303,7 @@ export default class Device extends AABBDevice {
                         platform: 'select',
                         unique_id: '$deviceid-soil',
                         state_topic: '$this/soil',
+                        command_topic: '$this/soil/set',
                         name: 'Soil level',
                         icon: 'mdi:washing-machine',
                         device_class: 'enum',
@@ -626,8 +633,6 @@ export default class Device extends AABBDevice {
             const steam_code = (currentSteam === 'ON' ? 0x01 : 0x00).toString(16).padStart(2, '0').toUpperCase();
             console.log('[DEBUG][SELECT] Turbowash code', turbowash_code, '| prewash code', prewash_code, '| steam code', steam_code)
             const message = `F0E5000201FF090A${course_code}1E${soil_code}20${rinse_code}21${spin_code}1F${temp_code}3E${steam_code}35${turbowash_code}34${prewash_code}7F0000`
-            console.log('[DEBUG] Sending message to change program on whasing machine', message)
-            this.send(Buffer.from(message, 'hex'))
         } else if (prop === 'send_selected') {
             const currentState = this.publishCache
             const currentTemp = String(currentState.get('temp-select'))
