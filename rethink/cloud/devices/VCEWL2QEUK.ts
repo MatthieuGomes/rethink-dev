@@ -149,6 +149,14 @@ export default class Device extends AABBDevice {
                         icon: 'mdi:power',
                         device_class: 'running',
                     },
+                    repower: {
+                        platform: 'switch',
+                        unique_id: '$deviceid-power',
+                        state_topic: '$this/power',
+                        command_topic: '$this/power/set',
+                        name: 'Repower',
+                        icon: 'mdi:power',
+                    },
                     status: {
                         platform: 'sensor',
                         unique_id: '$deviceid-status',
