@@ -141,11 +141,12 @@ export default class Device extends AABBDevice {
                 ...HADevice.config(meta, { name: 'LG Washer' }),
                 components: {
                     power: {
-                        platform: 'binary_sensor',
+                        platform: 'switch',
                         unique_id: '$deviceid-power',
                         state_topic: '$this/power',
+                        command_topic: '$this/power/set',
                         name: 'Power',
-                        icon: 'mdi:washing-machine',
+                        icon: 'mdi:power',
                         device_class: 'running',
                     },
                     status: {
@@ -405,6 +406,12 @@ export default class Device extends AABBDevice {
         // not yet located (declared entities intentionally omitted rather than published wrong): error.
     }
 
+    setProperty(prop: string, mqttValue: string) {
+        if (prop === 'power') {
+            const message = Buffer.from(mqttValue === 'ON' ? 'F0A10100' : 'F0E5000201FF010200', 'hex')
+            this.send(message)
+        }
+    };
     // Fields that live at stable record-B offsets and persist across power states: child-lock /
     // remote-start bits (rec[36]) and the tub-clean wash counter (rec[27] — washes since the last drum
     // clean, NOT a lifetime count; see the TUB_CLEAN_OFFSET note). Published from both the running and
