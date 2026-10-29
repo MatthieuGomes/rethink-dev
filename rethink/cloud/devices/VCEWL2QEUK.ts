@@ -1,483 +1,152 @@
 import HADevice from './base'
-import { Enum } from '@/util/enum'
 import { Device as Thinq2Device } from '../thinq2/device'
-import { tombstone, type Connection } from '../homeassistant'
+import { type Connection } from '../homeassistant'
 import { type Metadata } from '../thinq'
 import { allowExtendedType } from '@/util/casting'
 import AABBDevice from './aabb_device'
-import { ERRORS, STATES } from './washer_common'
+import { Enum } from '@/util/enum'
+import { RINSES, SPINS, TEMPERATURES } from './washer_common'
 
-const program_availabilities = {
-    1: {
-        temp: [0, 1, 2, 3],
-        spin: [0, 1, 2, 3],
-        rinse: [0, 1, 2, 3, 4, 5],
-        soil: [0, 1, 2],
-        turbowash: [0, 1],
-        prewash: [0],
-        steam: [0]
-    },
-    2: {
-        temp: [0, 1, 2, 3, 4, 5],
-        spin: [0, 1, 2, 3, 4, 5],
-        rinse: [0, 1, 2, 3, 4, 5],
-        soil: [0, 1, 2],
-        turbowash: [0, 1],
-        prewash: [0, 1],
-        steam: [0, 1]
-    },
-    3: {
-        temp: [0, 1, 2, 3, 4, 5],
-        spin: [0, 1, 2, 3, 4, 5],
-        rinse: [0, 1, 2, 3, 4, 5],
-        soil: [0, 1, 2],
-        turbowash: [0, 1],
-        prewash: [0, 1],
-        steam: [0, 1]
-    },
-    4: {
-        temp: [0, 1, 2, 3],
-        spin: [0, 1, 2],
-        rinse: [0, 1, 2, 3, 4, 5],
-        soil: [1, 2],
-        turbowash: [0, 1],
-        prewash: [0],
-        steam: [0]
-    },
-    5: {
-        temp: [4],
-        spin: [0, 1, 2, 3, 4, 5],
-        rinse: [0, 1, 2, 3, 4, 5],
-        soil: [0, 1, 2],
-        turbowash: [0, 1],
-        prewash: [0, 1],
-        steam: [0, 1]
-    },
-    6: {
-        temp: [0, 1, 2, 3, 4],
-        spin: [0, 1, 2, 3, 4, 5],
-        rinse: [0, 1, 2, 3, 4, 5],
-        soil: [1],
-        turbowash: [0],
-        prewash: [0],
-        steam: [0, 1]
-    },
-    7: {
-        temp: [1, 2, 3],
-        spin: [1, 2, 3, 4, 5],
-        rinse: [1, 2, 3],
-        soil: [1],
-        turbowash: [1],
-        prewash: [0],
-        steam: [0]
-    },
-    8: {
-        temp: [0, 1, 2, 3],
-        spin: [0, 1, 2, 3, 4, 5],
-        rinse: [0, 1, 2, 3],
-        soil: [0, 1, 2],
-        turbowash: [0, 1],
-        prewash: [0],
-        steam: [0]
-    },
-    9: {
-        temp: [0, 1, 2, 3],
-        spin: [0, 1, 2],
-        rinse: [0, 1, 2, 3, 4, 5],
-        soil: [1, 2],
-        turbowash: [0],
-        prewash: [0],
-        steam: [0]
-    },
-    10: {
-        temp: [0, 1, 2, 3],
-        spin: [0, 1, 2, 3, 4, 5],
-        rinse: [0, 1, 2, 3],
-        soil: [0, 1, 2],
-        turbowash: [0],
-        prewash: [0],
-        steam: [0]
-    },
-    11: {
-        temp: [404],
-        spin: [404],
-        rinse: [404],
-        soil: [404],
-        turbowash: [0],
-        prewash: [0],
-        steam: [0]
-    },
-    12: {
-        temp: [404],
-        spin: [1, 2, 3, 4, 5],
-        rinse: [1, 2, 3, 4, 5],
-        soil: [404],
-        turbowash: [0],
-        prewash: [0],
-        steam: [0]
-    },
-    13: {
-        temp: [0, 1, 2, 3, 4],
-        spin: [0, 1, 2, 3, 4, 5],
-        rinse: [0, 1, 2, 3, 4, 5],
-        soil: [0, 1, 2],
-        turbowash: [0, 1],
-        prewash: [0, 1],
-        steam: [0, 1]
-    },
-    14: {
-        temp: [404],
-        spin: [1, 2, 3, 4, 5],
-        rinse: [0],
-        soil: [404],
-        turbowash: [0],
-        prewash: [0],
-        steam: [0]
-    },
-    15: {
-        temp: [0, 1, 2, 3, 4],
-        spin: [0, 1, 2, 3, 4, 5],
-        rinse: [0, 1, 2, 3, 4, 5],
-        soil: [0, 1, 2],
-        turbowash: [0, 1],
-        prewash: [0, 1],
-        steam: [0, 1]
-    },
-    16: {
-        temp: [404],
-        spin: [0, 1, 2, 3, 4, 5],
-        rinse: [0, 1, 2, 3, 4, 5],
-        soil: [1, 2],
-        turbowash: [0, 1],
-        prewash: [0, 1],
-        steam: [0]
-    },
-    17: {
-        temp: [0, 1, 2, 3, 4],
-        spin: [1, 2, 3, 4, 5],
-        rinse: [1, 2, 3, 4, 5],
-        soil: [1],
-        turbowash: [1],
-        prewash: [0, 1],
-        steam: [0, 1]
-    },
-}
+// LG F4X7511TWS front-load washer — matched on modelId "VCDWL2QEUK". Unlike the 80-byte
+// single-frame F-class washers, this model emits several AABB frame types, discriminated by inner[3]
+// (buf = the AABB body, AA+len and checksum+BB already stripped; buf[0]==0x20 on every frame):
+//   0x88  config frame  — selected program/options; sent at cycle start / setting-change only.
+//   0x92  status frame  — two back-to-back 63-byte records (LG "old state, then new state"); we read
+//                         record B = buf[78:141] (current; leads with the soil level, or 0x00 in standby).
+//                         cf. the dual-record 0xEC washer in PR #77, which reads the *first* record — this
+//                         model uses the second.
+//   0x41  door snapshot — carries the current door state; emitted on every door transition / at ready.
+// Offsets were reverse-engineered against the LG app and validated in HA; see the PR description for the
+// per-offset capture evidence.
 
-const conditional_params = {
-    prewash: {
-        steam: 0
-    },
-    steam: {
-        prewash: 0
-    },
-    turbowash: {
-        rinse: 1,
-        spin: 1,
-    }
-};
+const STATUS_FRAME_TYPE = 0x92
+const CONFIG_FRAME_TYPE = 0x88
+const STATUS_RECORD_OFF = 78 // record B (current state) start within the inner body
+const STATUS_RECORD_LEN = 63
+const STATUS_FRAME_LEN = 142 // 15B header + 63B recA + 63B recB + 1B trailer
+// rec[0] of record B = the wash-intensity (soil) level while washing; 0x00 during the rinse/spin/end
+// phases, the spin-only program, and standby (there is no wash intensity then). RE'd by stepping the soil
+// level on a fixed course and diffing record B (each level confirmed twice). Power/off is keyed on the
+// status byte rec[20], not on this soil lead (see the power-derivation note below).
+const SOIL_BY_LEVEL = Enum.of({ Light: 1, Medium: 3, Heavy: 5 })
+const DOOR_FRAME_TYPE = 0x41
+const DOOR_OFFSET = 18 // buf[18] in the 0x41 snapshot: 0x02 = closed, 0x01 = open
+const DOOR_CLOSED = 0x02
+const DOOR_OPEN = 0x01
 
-const forced_params = {
-    steam: {
-        temp: 4,
-    }
-}
+// Power/off: a record with BOTH a zero soil lead (rec[0]) AND a zero status byte (rec[20]) is LG POWEROFF
+// → OFF (seen on three live power-offs; the two are coincident on every off frame in the captures). Any
+// non-zero status is a running frame → ON: the wash phase (soil-led) and the rinse/spin/end phases +
+// spin-only program (0x00-soil-led but non-zero status) all share the same record-B offsets. The AND
+// (rather than status-alone) guards against a hypothetical soil-led frame with a transient zero status.
+const RECORD_B_STANDBY = 0x00
 
-const default_params = {
-    1: {
-        temp: 0,
-        spin: 3,
-        rinse: 1,
-        soil: 1,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    2: {
-        temp: 3,
-        spin: 5,
-        rinse: 1,
-        soil: 1,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    3: {
-        temp: 3,
-        spin: 5,
-        rinse: 1,
-        soil: 1,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    4: {
-        temp: 1,
-        spin: 2,
-        rinse: 1,
-        soil: 1,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    5: {
-        temp: 4,
-        spin: 5,
-        rinse: 1,
-        soil: 1,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    6: {
-        temp: 3,
-        spin: 5,
-        rinse: 1,
-        soil: 1,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    7: {
-        temp: 1,
-        spin: 1,
-        rinse: 1,
-        soil: 1,
-        turbowash: 1,
-        prewash: 0,
-        steam: 0
-    },
-    8: {
-        temp: 0,
-        spin: 3,
-        rinse: 1,
-        soil: 1,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    9: {
-        temp: 2,
-        spin: 2,
-        rinse: 1,
-        soil: 1,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    10: {
-        temp: 1,
-        spin: 2,
-        rinse: 1,
-        soil: 1,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    11: {
-        temp: 404,
-        spin: 404,
-        rinse: 404,
-        soil: 404,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    12: {
-        temp: 404,
-        spin: 5,
-        rinse: 1,
-        soil: 404,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    13: {
-        temp: 3,
-        spin: 5,
-        rinse: 1,
-        soil: 1,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    14: {
-        temp: 404,
-        spin: 5,
-        rinse: 0,
-        soil: 404,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    15: {
-        temp: 3,
-        spin: 3,
-        rinse: 1,
-        soil: 1,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    16: {
-        temp: 404,
-        spin: 5,
-        rinse: 1,
-        soil: 1,
-        turbowash: 0,
-        prewash: 0,
-        steam: 0
-    },
-    17: {
-        temp: 3,
-        spin: 4,
-        rinse: 1,
-        soil: 1,
-        turbowash: 1,
-        prewash: 0,
-        steam: 0
-    },
-}
+// Settings (temp/spin/course) are read from the status frame's record B — laid out 03 [TEMP] 0e [SPIN]
+// [COURSE]… — not from the sparse 0x88 config frame (which fires only at cycle start and is routinely
+// missed). These status-frame encodings are distinct from the 0x88 indices, RE'd by diffing record B
+// across LG-app "send to machine" pushes one setting at a time. Anything unmapped reads unknown.
 
-const COURSES = Enum.of({
-    'Not Specified': 404,
-    'Bed Sheets': 1,
-    'Towels': 2,
-    'Cotton': 3,
-    'Delicate': 4,
-    'Sleeves': 5,
-    'AI Wash': 6,
-    'Quick 14': 7,
-    'Bedding': 8,
-    'Wool/Hand': 9,
-    'Down Jacket': 10,
-    'Tub Clean': 11,
-    'Rinse + Spin': 12,
-    'Syntetic': 13,
-    'Spin Only': 14,
-    'Mix': 15,
-    'Eco 40-60': 16,
-    'Turbowash 39': 17,
-});
-const TEMPERATURES = Enum.of({
-    'Not specified': 404,
-    'Cold': 0,
-    '20°C': 1,
-    '30°C': 2,
-    '40°C': 3,
-    '60°C': 4,
-    '95°C': 5,
+// NOTE: The shared SPINS & TEMPERATURES enums match the values used by this washer, when shifted by 1.
+// This is accounted for when calling .map()
+
+const STATUS_COURSE = Enum.of({
+    'AI Wash': 0x72,
+    Cotton: 0x2e,
+    Towels: 0x54,
+    'Quick 14': 0x4b,
+    'Spin only': 0x4e, // a 0x00-soil-led program; decoded like the rinse/spin phases (same record-B offsets)
+    'Drum Clean': 0x55,
+    // RE'd 2026-06-30 by pushing each program from the LG app and reading rec[4] (cross-checked against
+    // the rec[19] repeat). English names for the DK programs this unit offers.
+    'Eco 40-60': 0x13,
+    'TurboWash 39': 0x7a,
+    Mixed: 0x2b,
+    Delicate: 0x16,
+    'Easy Care': 0x1d,
+    'Hand/Wool': 0x5e,
+    Activewear: 0x4f,
+    'Allergy Care': 0x04,
+    Duvet: 0x1b,
+    'Cold Wash': 0x11,
+    Bedding: 0x81,
+    'Cuffs & Collars': 0xa9,
+    'Rainy Days': 0x6a,
+    'Silent Wash': 0x42,
+    'Baby Steam Care': 0x07,
+    'Down Jacket': 0x73,
+    'Microplastic Care': 0x88,
+    // pure rinse+spin program: 0x00-soil-led (no wash phase, like spin-only), decoded via the running
+    // path since its status byte is non-zero.
+    'Rinse + Spin': 0x37,
 })
 
-const SPINS = Enum.of({
-    'Not specified': 404,
-    'No spin': 0,
-    '400 rpm': 1,
-    '800 rpm': 2,
-    '1000 rpm': 3,
-    '1200 rpm': 4,
-    '1400 rpm': 5,
+// status from record[20] — a course-dependent "step" id (NOT the F-class STATES indices). Maintenance
+// courses use their own ids (Drum Clean = 0x29); anything unmapped falls back to 'Running' (free-text
+// status, so HA never rejects it).
+const STATUS = Enum.of({
+    // 0x03 is the early detection sub-step (cloud state DETECTING) and 0x25 the clothing-recognition
+    // one (CLOTHING_RECOGNITION); both are the same thing to a HA user.
+    Detecting: [0x01, 0x03, 0x25],
+    Paused: 0x02,
+    Washing: [0x0b, 0x26], // 0x26 = the detergent-input sub-step (cloud state DETERGENT_INPUT)
+    Rinsing: [0x0c, 0x27], // 0x27 = the softener-input sub-step (cloud state SOFTENER_INPUT)
+    Spinning: 0x0e,
+    End: 0x10,
+    'Drum Clean': 0x29,
 })
 
-const RINSES = Enum.of({
-    'Not specified': 404,
-    'No rinse': 0,
-    'Rinse': 1,
-    'Rinse+': 2,
-    'Rinse++': 3,
-    'Rinse + Hold': 4,
-    'Rinse+ + Hold': 5,
-});
+// EzDispense auto-dosing — also in status-frame record B. The two reservoir enable flags and their
+// per-wash default doses, RE'd by toggling each dispenser and stepping its dose in the LG app one
+// setting at a time and diffing record B (every captured mL value decoded to an exact byte).
+// Corroborated on the real drum-clean frame (both enabled, 45/30 mL), so the offsets hold in a running
+// cycle, not just at setting-change. Doses go 9–120 mL in 3 mL steps; the byte is the literal mL value.
+const DISP_DETERGENT_EN = 29 // rec[29]: 0x02 = detergent dispenser on, 0x00 = off
+const DISP_SOFTENER_EN = 30 // rec[30]: 0x02 = softener dispenser on, 0x00 = off
+const DISP_DETERGENT_ML = 31 // rec[31]: detergent default dose, direct mL byte
+const DISP_SOFTENER_ML = 32 // rec[32]: softener default dose, direct mL byte
+const DISP_ON = 0x02
 
-const SOIL_LEVELS = Enum.of({
-    'Not specified': 404,
-    'Light': 0,
-    'Medium': 1,
-    'Heavy': 2,
-})
+// Program option toggles — a bitfield pair in record B, RE'd by flipping one option at a time (each
+// isolated so only its bit moved) and diffing record B; each verified on and off twice.
+const OPT_BYTE_A = 33 // rec[33]: pre-wash + TurboWash bits
+const OPT_PREWASH = 0x40 // forvask
+const OPT_TURBOWASH = 0x20
+const OPT_BYTE_B = 34 // rec[34]: steam bit
+const OPT_STEAM = 0x10 // damp
 
-const TEMP_CODES = Enum.of({
-    404: 0xFF,
-    0: 0x08,
-    1: 0x01,
-    2: 0x02,
-    3: 0x03,
-    4: 0x05,
-    5: 0x06,
-});
-const SPIN_CODES = Enum.of({
-    404: 0xFF,
-    0: 0x0C,
-    1: 0x01,
-    2: 0x04,
-    3: 0x06,
-    4: 0x08,
-    5: 0x09,
-});
-const RINSE_CODES = Enum.of({
-    404: 0xFF,
-    0: 0x00,
-    1: 0x0E,
-    2: 0x0F,
-    3: 0x10,
-    4: 0x12,
-    5: 0x13,
-});
-const SOIL_CODES = Enum.of({
-    404: 0xFF,
-    0: 0x01,
-    1: 0x03,
-    2: 0x05,
-});
-const COURSE_CODES = Enum.of({
-    404: 0x00,
-    1: 0x81,
-    2: 0x54,
-    3: 0x2E,
-    4: 0x16,
-    5: 0xA9,
-    6: 0x72,
-    7: 0x4B,
-    8: 0x1B,
-    9: 0x5E,
-    10: 0x73,
-    11: 0x55,
-    12: 0x37,
-    13: 0x1D,
-    14: 0x4E,
-    15: 0x2B,
-    16: 0x13,
-    17: 0x7A,
-});
+// Child-lock + remote-start flags — record B rec[36]. These are toggled on the physical panel (not the
+// LG app), and each toggle emits a 0x92; RE'd by flipping each on/off (three cycles) and correlating
+// record B against the LG cloud's own childLock/remoteStart fields. Validated both in standby and mid-run
+// (rec[36] held its position across a running frame). rec[36] also carries a 0x02 standby-indicator bit
+// (set at rest, clears during a run) which is independent of these two flags, so test each bit directly.
+const FLAGS_BYTE = 36
+const FLAG_CHILD_LOCK = 0x20
+const FLAG_REMOTE_START = 0x10
+
+// "Washes since drum clean" counter — record B rec[27]. A single byte (rec[28] is a constant, not a high
+// byte). RE'd on a full AI-wash: it read 1 throughout the run and stepped to 2 at status = End, matching
+// the LG cloud's TCLCount field (1 → 2) exactly — NOT a lifetime cycle count (this unit exposes no
+// lifetime counter; the byte read 32 before a drum-clean and reset to 1 after, i.e. it's the tub-clean
+// reminder counter). Present at the same offset in the standby record, so it also reads correctly at
+// rest. Published as a plain sensor with NO state_class — it resets at each drum-clean, so total_increasing
+// would wrongly accumulate across the reset.
+const TUB_CLEAN_OFFSET = 27
+
 export default class Device extends AABBDevice {
     constructor(HA: Connection, thinq: Thinq2Device, meta: Metadata) {
         super(HA, thinq, false)
+        // Declare only the entities this decoder actually populates (no inherited/zombie entities).
         this.setConfig(
             allowExtendedType({
                 ...HADevice.config(meta, { name: 'LG Washer' }),
                 components: {
                     power: {
-                        platform: 'switch',
+                        platform: 'binary_sensor',
                         unique_id: '$deviceid-power',
                         state_topic: '$this/power',
-                        command_topic: '$this/power/set',
-                        name: '',
+                        name: 'Power',
                         icon: 'mdi:washing-machine',
-                    },
-                    start: {
-                        platform: 'button',
-                        unique_id: '$deviceid-start',
-                        command_topic: '$this/start/set',
-                        payload_press: '',
-                        name: 'Start',
-                        icon: 'mdi:play-circle-outline',
-                    },
-                    pause: {
-                        platform: 'button',
-                        unique_id: '$deviceid-pause',
-                        command_topic: '$this/pause/set',
-                        payload_press: '',
-                        name: 'Pause',
-                        icon: 'mdi:pause-circle-outline',
+                        device_class: 'running',
                     },
                     status: {
                         platform: 'sensor',
@@ -485,84 +154,32 @@ export default class Device extends AABBDevice {
                         state_topic: '$this/status',
                         name: 'Status',
                         icon: 'mdi:state-machine',
-                        device_class: 'enum',
-                        options: STATES.options,
-                    },
-                    error: {
-                        platform: 'binary_sensor',
-                        unique_id: '$deviceid-error',
-                        state_topic: '$this/error',
-                        name: 'Error',
-                        icon: 'mdi:check-circle',
-                        device_class: 'problem',
-                        entity_category: 'diagnostic',
-                    },
-                    error_message: {
-                        platform: 'sensor',
-                        unique_id: '$deviceid-error-message',
-                        state_topic: '$this/error_message',
-                        name: 'Error message',
-                        icon: 'mdi:alert-circle-outline',
-                        device_class: 'enum',
-                        entity_category: 'diagnostic',
-                        options: ERRORS.options,
+                        // free-text (NOT device_class:enum): the step codes are course-dependent and we
+                        // emit a 'Running' fallback, both of which an enum constraint would reject.
                     },
                     course: {
-                        platform: 'select',
+                        platform: 'sensor',
                         unique_id: '$deviceid-course',
                         state_topic: '$this/course',
-                        command_topic: '$this/course/set',
                         name: 'Course',
-                        icon: 'mdi:washing-machine',
-                        options: COURSES.options,
+                        icon: 'mdi:pin-outline',
                     },
                     temp: {
-                        platform: 'select',
+                        platform: 'sensor',
                         unique_id: '$deviceid-temp',
                         state_topic: '$this/temp',
-                        command_topic: '$this/temp/set',
                         name: 'Temperature',
                         device_class: 'enum',
-                        icon: 'mdi:thermometer',
                         options: TEMPERATURES.options,
                     },
                     spin: {
-                        platform: 'select',
+                        platform: 'sensor',
                         unique_id: '$deviceid-spin',
                         state_topic: '$this/spin',
-                        command_topic: '$this/spin/set',
                         name: 'Spin',
                         icon: 'mdi:autorenew',
                         device_class: 'enum',
                         options: SPINS.options,
-                    },
-                    cycles: {
-                        platform: 'sensor',
-                        unique_id: '$deviceid-cycles',
-                        state_topic: '$this/cycles',
-                        name: 'Cycle count',
-                        icon: 'mdi:counter',
-                    },
-                    remote_start: {
-                        platform: 'binary_sensor',
-                        unique_id: '$deviceid-remote_start',
-                        state_topic: '$this/remote_start',
-                        name: 'Remote start',
-                        icon: 'mdi:play-circle-outline',
-                    },
-                    door_lock: {
-                        platform: 'binary_sensor',
-                        unique_id: '$deviceid-door_lock',
-                        state_topic: '$this/door_lock',
-                        name: 'Door lock',
-                        device_class: 'lock',
-                    },
-                    child_lock: {
-                        platform: 'binary_sensor',
-                        unique_id: '$deviceid-child_lock',
-                        state_topic: '$this/child_lock',
-                        name: 'Child lock',
-                        device_class: 'lock',
                     },
                     energy: {
                         platform: 'sensor',
@@ -590,418 +207,211 @@ export default class Device extends AABBDevice {
                         unit_of_measurement: 'min',
                         name: 'Remaining time',
                     },
-                    reserve_time: {
+                    door: {
+                        platform: 'binary_sensor',
+                        unique_id: '$deviceid-door',
+                        state_topic: '$this/door',
+                        name: 'Door',
+                        device_class: 'door', // payload ON = open, OFF = closed
+                    },
+                    detergent_dispenser: {
+                        platform: 'binary_sensor',
+                        unique_id: '$deviceid-detergent_dispenser',
+                        state_topic: '$this/detergent_dispenser',
+                        name: 'Detergent dispenser',
+                        icon: 'mdi:cup-water',
+                    },
+                    softener_dispenser: {
+                        platform: 'binary_sensor',
+                        unique_id: '$deviceid-softener_dispenser',
+                        state_topic: '$this/softener_dispenser',
+                        name: 'Softener dispenser',
+                        icon: 'mdi:cup-water',
+                    },
+                    detergent_dose: {
                         platform: 'sensor',
-                        unique_id: '$deviceid-reserve_time',
-                        state_topic: '$this/reserve_time',
-                        device_class: 'duration',
-                        unit_of_measurement: 'h',
-                        name: 'Reserve time',
-                        icon: 'mdi:timer-sand',
+                        unique_id: '$deviceid-detergent_dose',
+                        state_topic: '$this/detergent_dose',
+                        name: 'Detergent dose',
+                        icon: 'mdi:cup',
+                        device_class: 'volume',
+                        unit_of_measurement: 'mL',
+                        state_class: 'measurement',
+                    },
+                    softener_dose: {
+                        platform: 'sensor',
+                        unique_id: '$deviceid-softener_dose',
+                        state_topic: '$this/softener_dose',
+                        name: 'Softener dose',
+                        icon: 'mdi:cup-outline',
+                        device_class: 'volume',
+                        unit_of_measurement: 'mL',
+                        state_class: 'measurement',
+                    },
+                    soil: {
+                        platform: 'sensor',
+                        unique_id: '$deviceid-soil',
+                        state_topic: '$this/soil',
+                        name: 'Soil level',
+                        icon: 'mdi:liquid-spot',
+                        // free-text (like course/status): unmapped levels read unknown.
                     },
                     rinse: {
-                        platform: 'select',
+                        platform: 'sensor',
                         unique_id: '$deviceid-rinse',
                         state_topic: '$this/rinse',
-                        command_topic: '$this/rinse/set',
                         name: 'Rinse',
-                        icon: 'mdi:water',
-                        device_class: 'enum',
-                        options: RINSES.options,
+                        icon: 'mdi:water-sync',
                     },
-                    extra_rinse: {
+                    prewash: {
                         platform: 'binary_sensor',
-                        unique_id: '$deviceid-extra_rinse',
-                        state_topic: '$this/extra_rinse',
-                        name: 'Extra rinse',
-                        icon: 'mdi:water-plus',
+                        unique_id: '$deviceid-prewash',
+                        state_topic: '$this/prewash',
+                        name: 'Pre-wash',
+                        icon: 'mdi:water-sync',
                     },
                     turbowash: {
-                        platform: 'switch',
+                        platform: 'binary_sensor',
                         unique_id: '$deviceid-turbowash',
                         state_topic: '$this/turbowash',
-                        command_topic: '$this/turbowash/set',
                         name: 'TurboWash',
                         icon: 'mdi:rocket-launch',
                     },
-                    prewash: {
-                        platform: 'switch',
-                        unique_id: '$deviceid-prewash',
-                        state_topic: '$this/prewash',
-                        command_topic: '$this/prewash/set',
-                        name: 'Pre-wash',
-                        icon: 'mdi:water-pump',
-                    },
-                    soil: {
-                        platform: 'select',
-                        unique_id: '$deviceid-soil',
-                        state_topic: '$this/soil',
-                        command_topic: '$this/soil/set',
-                        name: 'Soil level',
-                        icon: 'mdi:liquid-spot',
-                        device_class: 'enum',
-                        options: SOIL_LEVELS.options,
-                    },
-                    intensive_wash: tombstone('binary_sensor'),
                     steam: {
-                        platform: 'switch',
+                        platform: 'binary_sensor',
                         unique_id: '$deviceid-steam',
                         state_topic: '$this/steam',
-                        command_topic: '$this/steam/set',
                         name: 'Steam',
                         icon: 'mdi:kettle-steam',
                     },
-                    turbowash_select: {
-                        platform: 'switch',
-                        unique_id: '$deviceid-turbowash-select',
-                        state_topic: '$this/turbowash-select',
-                        command_topic: '$this/turbowash-select/set',
-                        name: 'TurboWash selection',
-                        icon: 'mdi:rocket-launch',
+                    child_lock: {
+                        platform: 'binary_sensor',
+                        unique_id: '$deviceid-child_lock',
+                        state_topic: '$this/child_lock',
+                        name: 'Child lock',
+                        icon: 'mdi:lock', // NOT device_class 'lock' — that class is inverted (on = unlocked)
+                        entity_category: 'diagnostic',
                     },
-                    prewash_select: {
-                        platform: 'switch',
-                        unique_id: '$deviceid-prewash-select',
-                        state_topic: '$this/prewash-select',
-                        command_topic: '$this/prewash-select/set',
-                        name: 'Pre-wash selection',
-                        icon: 'mdi:water-pump',
+                    remote_start: {
+                        platform: 'binary_sensor',
+                        unique_id: '$deviceid-remote_start',
+                        state_topic: '$this/remote_start',
+                        name: 'Remote start',
+                        icon: 'mdi:play-circle-outline',
+                        entity_category: 'diagnostic',
                     },
-                    steam_select: {
-                        platform: 'switch',
-                        unique_id: '$deviceid-steam-select',
-                        state_topic: '$this/steam-select',
-                        command_topic: '$this/steam-select/set',
-                        name: 'Steam selection',
-                        icon: 'mdi:kettle-steam',
-                    },
-                    course_select: {
-                        platform: 'select',
-                        unique_id: '$deviceid-course-select',
-                        state_topic: '$this/course-select',
-                        command_topic: '$this/course-select/set',
-                        name: 'Course selection',
-                        icon: 'mdi:pin-outline',
-                        device_class: 'enum',
-                        options: COURSES.options,
-                    },
-                    temp_select: {
-                        platform: 'select',
-                        unique_id: '$deviceid-temp-select',
-                        state_topic: '$this/temp-select',
-                        command_topic: '$this/temp-select/set',
-                        name: 'Temperature selection',
-                        icon: 'mdi:thermometer',
-                        device_class: 'enum',
-                        options: TEMPERATURES.options,
-                    },
-                    spin_select: {
-                        platform: 'select',
-                        unique_id: '$deviceid-spin-select',
-                        state_topic: '$this/spin-select',
-                        command_topic: '$this/spin-select/set',
-                        name: 'Spin selection',
-                        icon: 'mdi:autorenew',
-                        device_class: 'enum',
-                        options: SPINS.options,
-                    },
-                    rinse_select: {
-                        platform: 'select',
-                        unique_id: '$deviceid-rinse-select',
-                        state_topic: '$this/rinse-select',
-                        command_topic: '$this/rinse-select/set',
-                        name: 'Rinse selection',
-                        icon: 'mdi:water',
-                        device_class: 'enum',
-                        options: RINSES.options,
-                    },
-                    soil_select: {
-                        platform: 'select',
-                        unique_id: '$deviceid-soil-select',
-                        state_topic: '$this/soil-select',
-                        command_topic: '$this/soil-select/set',
-                        name: 'Soil level selection',
-                        icon: 'mdi:liquid-spot',
-                        device_class: 'enum',
-                        options: SOIL_LEVELS.options,
-                    },
-                    send_selected: {
-                        platform: 'button',
-                        unique_id: '$deviceid-send_selected',
-                        command_topic: '$this/send_selected/set',
-                        payload_press: '',
-                        name: 'Send',
-                        icon: 'mdi:send',
+                    tub_clean_count: {
+                        platform: 'sensor',
+                        unique_id: '$deviceid-tub_clean_count',
+                        state_topic: '$this/tub_clean_count',
+                        name: 'Washes since drum clean',
+                        icon: 'mdi:washing-machine-alert',
+                        // No state_class: this counter RESETS to a low value at each drum-clean;
+                        // total_increasing would wrongly accumulate across the reset. Raw value is what we want.
+                        entity_category: 'diagnostic',
                     },
                 },
             }),
         )
     }
-    start() {
-        console.log(["DEBUG] Starting"])
-        this.send(Buffer.from('F0E5000201FF00', 'hex'))
-    }
+
     processAABB(buf: Buffer) {
-        const bufLength = buf.length
-        const programPacketLengths = [87, 89]
-        const powerPacketLengths = [14, 15]
-        const infoPacketLengths = [142]
-        if (bufLength === 80 && buf[0] == 0x20) {
-            console.log('[DEBUG] Old packet')
-            console.log('[DEBUG][OLD] Length', buf.length)
-            const time_remain = buf[44] * 60 + buf[45]
-            const time_initial = buf[46] * 60 + buf[47]
-            const course = buf[48]
-            const error = buf[49]
-            const soil = buf[50]
-            const spin = buf[51]
-            const temp = buf[52]
-            const extra_rinse = buf[53]
-            const time_reserve_hour = buf[55]
-            const options = buf[57]
-            const lock_status = buf[58]
-            const cycles = buf[64]
-            const energy = buf[71] * 256 + buf[72]
-
-            this.publishProperty('error_message', ERRORS.map(error)) // publish message before set error state
-            this.publishProperty('error', error ? 'ON' : 'OFF')
-            this.publishProperty('course', COURSES.map(course))
-            this.publishProperty('spin', SPINS.map(spin))
-            this.publishProperty('temp', TEMPERATURES.map(temp))
-            this.publishProperty('cycles', cycles)
-            this.publishProperty('remote_start', lock_status & 2 ? 'ON' : 'OFF')
-            this.publishProperty('door_lock', !(lock_status & 0x40) ? 'ON' : 'OFF') // inverted logic, off=locked
-            this.publishProperty('child_lock', !(lock_status & 0x80) ? 'ON' : 'OFF') // inverted logic, off=locked
-            this.publishProperty('initial_time', time_initial)
-            this.publishProperty('remaining_time', time_remain)
-            this.publishProperty('reserve_time', time_reserve_hour)
-            this.publishProperty('energy', energy)
-            this.publishProperty('extra_rinse', extra_rinse >= 2 ? 'ON' : 'OFF') // 0/1=off, 2+=one or more extra rinses (Rinse+)
-            this.publishProperty('turbowash', options & 0x01 ? 'ON' : 'OFF')
-            this.publishProperty('prewash', options & 0x40 ? 'ON' : 'OFF')
-            this.publishProperty('steam', options & 0x80 ? 'ON' : 'OFF')
-            this.publishProperty('soil', SOIL_LEVELS.map(soil))
-        } else if (powerPacketLengths.includes(bufLength) && buf[0] == 0x20) {
-            console.log('[DEBUG] Power packet', buf.toString('hex'))
-            const power_code = buf[9]
-            if (power_code !== 0x00) {
-                if (power_code === 0x01) {
-                    this.publishProperty('power', 'ON')
-                    this.send(Buffer.from('F0E5000201FF00', 'hex'))
-                } else {
-                    this.publishProperty('power', 'OFF')
-                }
-            }
-        } else if (programPacketLengths.includes(bufLength) && buf[0] === 0x20) {
-            console.log('[DEBUG] Program Packet', buf.toString('hex'))
-            const offset = bufLength === programPacketLengths[0] ? 0 : 2
-            const course_byte = 28
-            const spin_byte = 27
-            const rinse_byte = 26
-            const temp_byte = 25
-            const soil_byte = 24
-            const vapor_byte = 58
-            const turbowash_n_prewash_byte = 57
-            const course_code = buf[course_byte + offset]
-            const spin_code = buf[spin_byte + offset]
-            const rinse_code = buf[rinse_byte + offset]
-            const temp_code = buf[temp_byte + offset]
-            const soil_code = buf[soil_byte + offset]
-            const vapor_code = buf[vapor_byte + offset]
-            const turbowash_n_prewash_code = buf[turbowash_n_prewash_byte + offset]
-            const course_index = Number(COURSE_CODES.map(course_code))
-            const spin_index = Number(SPIN_CODES.map(spin_code))
-            const rinse_index = Number(RINSE_CODES.map(rinse_code))
-            const temp_index = Number(TEMP_CODES.map(temp_code))
-            const soil_index = Number(SOIL_CODES.map(soil_code))
-            this.publishProperty('steam', vapor_code === 0x10 ? 'ON' : 'OFF')
-            this.publishProperty('steam-select', vapor_code === 0x10 ? 'ON' : 'OFF')
-            this.publishProperty('course', COURSES.map(course_index))
-            this.publishProperty('course-select', COURSES.map(course_index))
-            this.publishProperty('spin', SPINS.map(spin_index))
-            this.publishProperty('spin-select', SPINS.map(spin_index))
-            this.publishProperty('rinse', RINSES.map(rinse_index))
-            this.publishProperty('rinse-select', RINSES.map(rinse_index))
-            this.publishProperty('temp', TEMPERATURES.map(temp_index))
-            this.publishProperty('temp-select', TEMPERATURES.map(temp_index))
-            this.publishProperty('soil', SOIL_LEVELS.map(soil_index))
-            this.publishProperty('soil-select', SOIL_LEVELS.map(soil_index))
-            if (turbowash_n_prewash_code !== 0x00) {
-                if (turbowash_n_prewash_code === 0x20) {
-                    this.publishProperty('turbowash', 'ON')
-                    this.publishProperty('turbowash-select', 'ON')
-                    this.publishProperty('prewash', 'OFF')
-                    this.publishProperty('prewash-select', 'OFF')
-                }
-                else if (turbowash_n_prewash_code === 0x40) {
-                    this.publishProperty('turbowash', 'OFF')
-                    this.publishProperty('turbowash-select', 'OFF')
-                    this.publishProperty('prewash', 'ON')
-                    this.publishProperty('prewash-select', 'ON')
-                }
-                else {
-                    this.publishProperty('turbowash', 'ON')
-                    this.publishProperty('turbowash-select', 'ON')
-                    this.publishProperty('prewash', 'ON')
-                    this.publishProperty('prewash-select', 'ON')
-                }
-            }
-            else {
-                this.publishProperty('turbowash', 'OFF')
-                this.publishProperty('turbowash-select', 'OFF')
-                this.publishProperty('prewash', 'OFF')
-                this.publishProperty('prewash-select', 'OFF')
-            }
-
-        } else if (bufLength === 71 && buf[0] === 0x20) {
-            console.log('[DEBUG] Same Property Packet', buf.toString('hex'))
-            const course_byte = 12
-            const spin_byte = 11
-            const rinse_byte = 10
-            const temp_byte = 9
-            const soil_byte = 8
-            const vapor_byte = 42
-            const turbowash_n_prewash_byte = 41
-            const course_code = buf[course_byte]
-            const spin_code = buf[spin_byte]
-            const rinse_code = buf[rinse_byte]
-            const temp_code = buf[temp_byte]
-            const soil_code = buf[soil_byte]
-            const vapor_code = buf[vapor_byte]
-            const turbowash_n_prewash_code = buf[turbowash_n_prewash_byte]
-            const course_index = Number(COURSE_CODES.map(course_code))
-            const spin_index = Number(SPIN_CODES.map(spin_code))
-            const rinse_index = Number(RINSE_CODES.map(rinse_code))
-            const temp_index = Number(TEMP_CODES.map(temp_code))
-            const soil_index = Number(SOIL_CODES.map(soil_code))
-            this.publishProperty('steam', vapor_code === 0x10 ? 'ON' : 'OFF')
-            this.publishProperty('steam-select', vapor_code === 0x10 ? 'ON' : 'OFF')
-            this.publishProperty('course', COURSES.map(course_index))
-            this.publishProperty('course-select', COURSES.map(course_index))
-            this.publishProperty('spin', SPINS.map(spin_index))
-            this.publishProperty('spin-select', SPINS.map(spin_index))
-            this.publishProperty('rinse', RINSES.map(rinse_index))
-            this.publishProperty('rinse-select', RINSES.map(rinse_index))
-            this.publishProperty('temp', TEMPERATURES.map(temp_index))
-            this.publishProperty('temp-select', TEMPERATURES.map(temp_index))
-            this.publishProperty('soil', SOIL_LEVELS.map(soil_index))
-            this.publishProperty('soil-select', SOIL_LEVELS.map(soil_index))
-            if (turbowash_n_prewash_code !== 0x00) {
-                if (turbowash_n_prewash_code === 0x20) {
-                    this.publishProperty('turbowash', 'ON')
-                    this.publishProperty('turbowash-select', 'ON')
-                    this.publishProperty('prewash', 'OFF')
-                    this.publishProperty('prewash-select', 'OFF')
-                }
-                else if (turbowash_n_prewash_code === 0x40) {
-                    this.publishProperty('turbowash', 'OFF')
-                    this.publishProperty('turbowash-select', 'OFF')
-                    this.publishProperty('prewash', 'ON')
-                    this.publishProperty('prewash-select', 'ON')
-                }
-                else {
-                    this.publishProperty('turbowash', 'ON')
-                    this.publishProperty('turbowash-select', 'ON')
-                    this.publishProperty('prewash', 'ON')
-                    this.publishProperty('prewash-select', 'ON')
-                }
-            }
-            else {
-                this.publishProperty('turbowash', 'OFF')
-                this.publishProperty('turbowash-select', 'OFF')
-                this.publishProperty('prewash', 'OFF')
-                this.publishProperty('prewash-select', 'OFF')
-            }
-        } else if (infoPacketLengths.includes(bufLength) && buf[0] == 0x20) {
-            console.log('[DEBUG] Packet containing Infos', buf.toString('hex'))
-            console.log('[DEBUG][INFO] Length', bufLength)
-        } else {
-            console.log('[DEBUG] Unknown AABB packet for washer', buf.toString('hex'))
-            console.log('[DEBUG][UNKNOWN] Length', bufLength)
-        }
-        console.log('[DEBUG] Published properties:', this.publishCache)
+        if (buf[0] !== 0x20 || buf.length < 6) return // < 6 skips the 3-byte heartbeat (need buf[3])
+        if (buf[3] === CONFIG_FRAME_TYPE) return this.processConfig(buf)
+        if (buf[3] === STATUS_FRAME_TYPE) return this.processStatus(buf)
+        if (buf[3] === DOOR_FRAME_TYPE) return this.processDoor(buf)
+        // other frame types (0x53 mid-cycle, 0xA0 end snapshot, 0x16/0x4d idle) are not yet decoded.
     }
-    SELECT_SETTABLE_PROPERTIES = ['temp-select', 'spin-select', 'rinse-select', 'soil-select', 'course-select', 'turbowash-select', 'prewash-select', 'steam-select']
-    SETTABLE_PROPERTIES = ['temp', 'spin', 'rinse', 'soil', 'course', 'turbowash', 'prewash', 'steam']
-    setProperty(prop: string, mqttValue: string) {
-        // AA08F0A1010011BB what I send for power on
-        // AA0DF0E5000201FF010200C4BB what I send for power off
-        // AA09F0240101009CBB what is sent for power off
-        // AA08F02A010098BB what is sent for power on
-        console.log('[DEBUG] Received property set', prop, mqttValue)
-        if (prop === 'power') {
-            if (mqttValue === 'ON') {
-                console.log('[DEBUG] Sending power on command')
-                this.send(Buffer.from('F0A10100', 'hex'))
-            } else if (mqttValue === 'OFF') {
-                this.send(Buffer.from('F0E5000201FF010200', 'hex'))
-            }
-        } else if ((this.SELECT_SETTABLE_PROPERTIES).includes(prop)) {
-            this.publishProperty(prop, mqttValue);
-        }
-        else if ((this.SETTABLE_PROPERTIES).includes(prop)) {
-            const currentState = this.publishCache
-            const currentTemp = String(prop == "temp" ? mqttValue : currentState.get('temp'))
-            const currentSpin = String(prop == "spin" ? mqttValue : currentState.get('spin'))
-            const currentRinse = String(prop == "rinse" ? mqttValue : currentState.get('rinse'))
-            const currentSoil = String(prop == "soil" ? mqttValue : currentState.get('soil'))
-            const currentCourse = String(prop == "course" ? mqttValue : currentState.get('course'))
-            const currentTurbowash = String(prop == "turbowash" ? mqttValue : currentState.get('turbowash'))
-            const currentPrewash = String(prop == "prewash" ? mqttValue : currentState.get('prewash'))
-            const currentSteam = String(prop == "steam" ? mqttValue : currentState.get('steam'))
-            console.log('[DEBUG][SELECT] Current temp', currentTemp, 'spin', currentSpin, 'rinse', currentRinse, 'soil', currentSoil, 'course', currentCourse, 'turbowash', currentTurbowash, 'prewash', currentPrewash, 'steam', currentSteam)
-            const course_index = COURSES.unmap(currentCourse || 'Not Specified')
-            const temp_index = TEMPERATURES.unmap(currentTemp || 'Not specified')
-            const spin_index = SPINS.unmap(currentSpin || 'Not specified')
-            const rinse_index = RINSES.unmap(currentRinse || 'Not specified')
-            const soil_index = SOIL_LEVELS.unmap(currentSoil || 'Not specified')
-            console.log('[DEBUG][SELECT] Course index', course_index, '| temp index', temp_index, '| spin index', spin_index, '| rinse index', rinse_index, '| soil index', soil_index)
-            const temp_code = (TEMP_CODES.unmap(String(temp_index)))?.toString(16).padStart(2, '0').toUpperCase();
-            const spin_code = (SPIN_CODES.unmap(String(spin_index)))?.toString(16).padStart(2, '0').toUpperCase();
-            const rinse_code = (RINSE_CODES.unmap(String(rinse_index)))?.toString(16).padStart(2, '0').toUpperCase();
-            const soil_code = (SOIL_CODES.unmap(String(soil_index)))?.toString(16).padStart(2, '0').toUpperCase();
-            const course_code = (COURSE_CODES.unmap(String(course_index)))?.toString(16).padStart(2, '0').toUpperCase();
-            console.log('[DEBUG][SELECT] Course code', course_code, '| temp code', temp_code, '| spin code', spin_code, '| rinse code', rinse_code, '| soil code', soil_code)
-            const turbowash_code = (currentTurbowash === 'ON' ? 0x01 : 0x00).toString(16).padStart(2, '0').toUpperCase();
-            const prewash_code = (currentPrewash === 'ON' ? 0x01 : 0x00).toString(16).padStart(2, '0').toUpperCase();
-            const steam_code = (currentSteam === 'ON' ? 0x01 : 0x00).toString(16).padStart(2, '0').toUpperCase();
-            console.log('[DEBUG][SELECT] Turbowash code', turbowash_code, '| prewash code', prewash_code, '| steam code', steam_code)
-            const message = `F0E5000201FF090A${course_code}1E${soil_code}20${rinse_code}21${spin_code}1F${temp_code}3E${steam_code}35${turbowash_code}34${prewash_code}7F0000`
-            this.send(Buffer.from(message, 'hex'))
-        }
-        else if (prop === 'send_selected') {
-            const currentState = this.publishCache
-            const currentTemp = String(currentState.get('temp-select'))
-            const currentSpin = String(currentState.get('spin-select'))
-            const currentRinse = String(currentState.get('rinse-select'))
-            const currentSoil = String(currentState.get('soil-select'))
-            const currentCourse = String(currentState.get('course-select'))
-            const currentTurbowash = String(currentState.get('turbowash-select'))
-            const currentPrewash = String(currentState.get('prewash-select'))
-            const currentSteam = String(currentState.get('steam-select'))
-            console.log('[DEBUG][SEND_SELECTED] Current temp', currentTemp, 'spin', currentSpin, 'rinse', currentRinse, 'soil', currentSoil, 'course', currentCourse, 'turbowash', currentTurbowash, 'prewash', currentPrewash, 'steam', currentSteam)
-            const course_index = COURSES.unmap(currentCourse || 'Not Specified')
-            const temp_index = TEMPERATURES.unmap(currentTemp || 'Not specified')
-            const spin_index = SPINS.unmap(currentSpin || 'Not specified')
-            const rinse_index = RINSES.unmap(currentRinse || 'Not specified')
-            const soil_index = SOIL_LEVELS.unmap(currentSoil || 'Not specified')
-            console.log('[DEBUG][SEND_SELECTED] Course index', course_index, '| temp index', temp_index, '| spin index', spin_index, '| rinse index', rinse_index, '| soil index', soil_index)
-            const temp_code = (TEMP_CODES.unmap(String(temp_index)))?.toString(16).padStart(2, '0').toUpperCase();
-            const spin_code = (SPIN_CODES.unmap(String(spin_index)))?.toString(16).padStart(2, '0').toUpperCase();
-            const rinse_code = (RINSE_CODES.unmap(String(rinse_index)))?.toString(16).padStart(2, '0').toUpperCase();
-            const soil_code = (SOIL_CODES.unmap(String(soil_index)))?.toString(16).padStart(2, '0').toUpperCase();
-            const course_code = (COURSE_CODES.unmap(String(course_index)))?.toString(16).padStart(2, '0').toUpperCase();
-            console.log('[DEBUG][SEND_SELECTED] Course code', course_code, '| temp code', temp_code, '| spin code', spin_code, '| rinse code', rinse_code, '| soil code', soil_code)
-            const turbowash_code = (currentTurbowash === 'ON' ? 0x01 : 0x00).toString(16).padStart(2, '0').toUpperCase();
-            const prewash_code = (currentPrewash === 'ON' ? 0x01 : 0x00).toString(16).padStart(2, '0').toUpperCase();
-            const steam_code = (currentSteam === 'ON' ? 0x01 : 0x00).toString(16).padStart(2, '0').toUpperCase();
-            console.log('[DEBUG][SEND_SELECTED] Turbowash code', turbowash_code, '| prewash code', prewash_code, '| steam code', steam_code)
-            const message = `F0E5000201FF090A${course_code}1E${soil_code}20${rinse_code}21${spin_code}1F${temp_code}3E${steam_code}35${turbowash_code}34${prewash_code}7F0000`
-            console.log('[DEBUG][SEND_SELECTED] Sending message to change program on whasing machine', message)
-            this.send(Buffer.from(message, 'hex'))
-        }
 
-        if (prop === 'pause') this.send(Buffer.from('F024040100', 'hex'))
-        if (prop === 'start') this.send(Buffer.from(mqttValue || 'F024050100', 'hex'))
+    // 0x41 — door/ready snapshot. Door state is at buf[18]: 0x02 = closed, 0x01 = open (0x05 =
+    // uninitialised at power-on, before the first door event — held, not published). Polarity confirmed
+    // against a labelled open/close capture. The 0x41 frame is only emitted while powered on, so the
+    // entity retains its last value during off/idle periods.
+    private processDoor(buf: Buffer) {
+        if (buf.length <= DOOR_OFFSET) return
+        const v = buf[DOOR_OFFSET]
+        if (v === DOOR_OPEN) this.publishProperty('door', 'ON')
+        else if (v === DOOR_CLOSED) this.publishProperty('door', 'OFF')
+        // any other value (e.g. 0x05 power-on init) leaves the last published state in place
+    }
+
+    // 0x88 — fires at cycle start / setting-change. Settings are read from the status frame (see
+    // processStatus), so this frame only serves as an early power-ON signal before the first 0x92.
+    private processConfig(_buf: Buffer) {
+        this.publishProperty('power', 'ON')
+    }
+
+    // 0x92 — runtime status (current-state record B, laid out [SOIL] [TEMP] 0e [SPIN] [COURSE]…):
+    //   rec[0]  = soil level (also the running discriminator), rec[1] = temp idx, rec[3] = spin idx,
+    //   rec[4]  = course code (status-frame encodings; see the SOIL_BY_LEVEL / STATUS_*_BY_INDEX /
+    //            STATUS_COURSE tables — distinct from the 0x88 indices),
+    //   rec[20] = status code, rec[13] = remaining min, rec[15] = initial min,
+    //   rec[16:18] = energy (big-endian Wh, same shape as the F-class buf[71]*256+buf[72]; confirmed
+    //            against the app's per-cycle "Energiforbrug" — 41 Wh cold, 880 Wh @60° — high byte proven),
+    //   rec[26] = rinse level 0..5
+    //   rec[29:33] = EzDispense (detergent/softener enable + dose mL; see the DISP_* offsets above),
+    //   rec[33] = pre-wash/TurboWash bits, rec[34] = steam bit (see the OPT_* masks above).
+    private processStatus(buf: Buffer) {
+        if (buf.length !== STATUS_FRAME_LEN) return // expected 142B; reject header/layout drift
+        const rec = buf.subarray(STATUS_RECORD_OFF, STATUS_RECORD_OFF + STATUS_RECORD_LEN)
+
+        // Powered off / standby: BOTH the soil lead (rec[0]) AND the status byte (rec[20]) are 0 (LG
+        // POWEROFF) — coincident on every off frame in the captures. A rinse / spin / end phase and the
+        // spin-only program are 0x00-soil-led but carry a NON-zero status, so they fall through to the
+        // running decode below. Requiring both to be zero (vs status alone) avoids flipping OFF on a
+        // hypothetical soil-led frame with a transient zero status. Zero the countdown so HA doesn't keep
+        // a stale remaining time alongside power=OFF; temp/spin/course retain their last values (the
+        // standby record is a frozen copy of the last program); energy is left as-is.
+        if (rec[0] === RECORD_B_STANDBY && rec[20] === 0x00) {
+            this.publishProperty('power', 'OFF')
+            this.publishProperty('status', 'Off')
+            this.publishProperty('remaining_time', 0)
+            this.publishProperty('initial_time', 0)
+            // child-lock / remote-start / cycle-count still apply while powered off (same offsets in the
+            // standby record) — publish them so HA reflects the panel state and count at rest.
+            this.publishPersistent(rec)
+            return
+        }
+        // A running frame. Record B uses the SAME offsets whether it leads with a soil level (wash phase)
+        // or 0x00 (rinse / spin / end phases + the spin-only program): the remaining-time countdown at
+        // rec[13] was cross-checked against the LG cloud's remainTimeMinute at several rinse points, and
+        // initial/spin/course/energy stay consistent across every phase boundary of a full captured cycle.
+        // During the non-wash phases soil (rec[0]) and temp (rec[1]) are simply 0 → read unknown,
+        // which is correct (no wash intensity / no active heat then).
+        this.publishProperty('power', 'ON')
+
+        this.publishProperty('status', STATUS.map(rec[20]) ?? 'Running')
+        this.publishProperty('soil', SOIL_BY_LEVEL.map(rec[0]))
+        this.publishProperty('rinse', RINSES.map(rec[26]))
+
+        // The original author claims that 50 °C and 600 RPM options are not offered on this model.
+        // Here we read out what the device sent us, so supporting these anyway is harmless.
+        this.publishProperty('temp', TEMPERATURES.map(rec[1] + 1))
+        this.publishProperty('spin', SPINS.map(rec[3] + 1))
+        this.publishProperty('course', STATUS_COURSE.map(rec[4]))
+        this.publishProperty('remaining_time', rec[13])
+        this.publishProperty('initial_time', rec[15])
+        this.publishProperty('energy', rec[16] * 256 + rec[17])
+        // EzDispense reservoirs: enable flags (0x02 on / else off) + default dose in mL (literal byte).
+        this.publishProperty('detergent_dispenser', rec[DISP_DETERGENT_EN] === DISP_ON ? 'ON' : 'OFF')
+        this.publishProperty('softener_dispenser', rec[DISP_SOFTENER_EN] === DISP_ON ? 'ON' : 'OFF')
+        this.publishProperty('detergent_dose', rec[DISP_DETERGENT_ML])
+        this.publishProperty('softener_dose', rec[DISP_SOFTENER_ML])
+        // Program option toggles (bitfields): pre-wash + TurboWash in rec[33], steam in rec[34].
+        this.publishProperty('prewash', (rec[OPT_BYTE_A] & OPT_PREWASH) !== 0 ? 'ON' : 'OFF')
+        this.publishProperty('turbowash', (rec[OPT_BYTE_A] & OPT_TURBOWASH) !== 0 ? 'ON' : 'OFF')
+        this.publishProperty('steam', (rec[OPT_BYTE_B] & OPT_STEAM) !== 0 ? 'ON' : 'OFF')
+        this.publishPersistent(rec)
+        // not yet located (declared entities intentionally omitted rather than published wrong): error.
+    }
+
+    // Fields that live at stable record-B offsets and persist across power states: child-lock /
+    // remote-start bits (rec[36]) and the tub-clean wash counter (rec[27] — washes since the last drum
+    // clean, NOT a lifetime count; see the TUB_CLEAN_OFFSET note). Published from both the running and
+    // standby paths (record B uses the same offsets in every frame type, including spin-only).
+    private publishPersistent(rec: Buffer) {
+        this.publishProperty('child_lock', (rec[FLAGS_BYTE] & FLAG_CHILD_LOCK) !== 0 ? 'ON' : 'OFF')
+        this.publishProperty('remote_start', (rec[FLAGS_BYTE] & FLAG_REMOTE_START) !== 0 ? 'ON' : 'OFF')
+        this.publishProperty('tub_clean_count', rec[TUB_CLEAN_OFFSET])
     }
 }
