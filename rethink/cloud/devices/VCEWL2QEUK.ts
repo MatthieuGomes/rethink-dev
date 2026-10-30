@@ -49,7 +49,45 @@ const RECORD_B_STANDBY = 0x00
 // NOTE: The shared SPINS & TEMPERATURES enums match the values used by this washer, when shifted by 1.
 // This is accounted for when calling .map()
 
-const STATUS_COURSE = Enum.of({
+const STATUS_SPINS = Enum.of({
+    'Not selected': 0xFF,
+    'No spin': 0x00,
+    '400 rpm': 0x01,
+    '800 rpm': 0x04,
+    '1000 rpm': 0x06,
+    '1200 rpm': 0x08,
+    '1400 rpm': 0x09,
+})
+
+
+const STATUS_TEMPERATURES = Enum.of({
+    'Not selected': 0xFF,
+    Cold: 0x08,
+    '20 °C': 0x01,
+    '30 °C': 0x02,
+    '40 °C': 0x03,
+    '60 °C': 0x05,
+    '95 °C': 0x06,
+})
+
+const STATUS_RINSES = Enum.of({
+    'Not selected': 0xFF,
+    'No rinse': 0x00,
+    'Rinse': 0x0E,
+    'Rinse+': 0x0F,
+    'Rinse++': 0x10,
+    'Rinse + Hold': 0x12,
+    'Rinse+ + Hold': 0x13,
+})
+
+const STATUS_SOIL = Enum.of({
+    'Not selected': 0xFF,
+    'Light': 0x01,
+    'Medium': 0x03,
+    'Heavy': 0x05,
+});
+
+const STATUS_COURSES = Enum.of({
     'AI Wash': 0x72,
     Cotton: 0x2e,
     Towels: 0x54,
@@ -131,6 +169,12 @@ const FLAG_REMOTE_START = 0x10
 // rest. Published as a plain sensor with NO state_class — it resets at each drum-clean, so total_increasing
 // would wrongly accumulate across the reset.
 const TUB_CLEAN_OFFSET = 27
+
+const SELECTABLES = ['course', 'temp', 'spin', 'rinse', 'soil', 'steam', 'turbowash', 'prewash']
+
+function toHexString(value: number|undefined): string {
+    return Number(value).toString(16).padStart(2, '0').toUpperCase();
+}
 
 export default class Device extends AABBDevice {
     constructor(HA: Connection, thinq: Thinq2Device, meta: Metadata) {
@@ -310,6 +354,80 @@ export default class Device extends AABBDevice {
                         // total_increasing would wrongly accumulate across the reset. Raw value is what we want.
                         entity_category: 'diagnostic',
                     },
+                    recourse: {
+                        platform: 'select',
+                        unique_id: '$deviceid-course',
+                        state_topic: '$this/course',
+                        command_topic: '$this/course/set',
+                        name: 'RECourse',
+                        icon: 'mdi:washing-machine',
+                        device_class: 'enum',
+                        options: STATUS_COURSES.options,
+                    },
+                    retemp: {
+                        platform: 'select',
+                        unique_id: '$deviceid-temp',
+                        state_topic: '$this/temp',
+                        command_topic: '$this/temp/set',
+                        name: 'RETemperature',
+                        device_class: 'enum',
+                        options: STATUS_TEMPERATURES.options,
+                    },
+                    respin: {
+                        platform: 'select',
+                        unique_id: '$deviceid-spin',
+                        state_topic: '$this/spin',
+                        command_topic: '$this/spin/set',
+                        name: 'RESpin',
+                        icon: 'mdi:autorenew',
+                        device_class: 'enum',
+                        options: SPINS.options,
+                    },
+                    resoil: {
+                        platform: 'select',
+                        unique_id: '$deviceid-soil',
+                        state_topic: '$this/soil',
+                        command_topic: '$this/soil/set',
+                        name: 'ReSoil level',
+                        icon: 'mdi:liquid-spot',
+                        device_class: 'enum',
+                        options: STATUS_SOIL.options,
+                        // free-text (like course/status): unmapped levels read unknown.
+                    },
+                    rerinse: {
+                        platform: 'select',
+                        unique_id: '$deviceid-rinse',
+                        state_topic: '$this/rinse',
+                        command_topic: '$this/rinse/set',
+                        name: 'RERinse',
+                        icon: 'mdi:water-sync',
+                        device_class: 'enum',
+                        options: STATUS_RINSES.options,
+                    },
+                    reprewash: {
+                        platform: 'switch',
+                        unique_id: '$deviceid-prewash',
+                        state_topic: '$this/prewash',
+                        command_topic: '$this/prewash/set',
+                        name: 'REPre-wash',
+                        icon: 'mdi:water-sync',
+                    },
+                    returbowash: {
+                        platform: 'switch',
+                        unique_id: '$deviceid-turbowash',
+                        state_topic: '$this/turbowash',
+                        command_topic: '$this/turbowash/set',
+                        name: 'RETurboWash',
+                        icon: 'mdi:rocket-launch',
+                    },
+                    resteam: {
+                        platform: 'switch',
+                        unique_id: '$deviceid-steam',
+                        state_topic: '$this/steam',
+                        command_topic: '$this/steam/set',
+                        name: 'RESteam',
+                        icon: 'mdi:kettle-steam',
+                    },
                 },
             }),
         )
@@ -388,7 +506,7 @@ export default class Device extends AABBDevice {
         // Here we read out what the device sent us, so supporting these anyway is harmless.
         this.publishProperty('temp', TEMPERATURES.map(rec[1] + 1))
         this.publishProperty('spin', SPINS.map(rec[3] + 1))
-        this.publishProperty('course', STATUS_COURSE.map(rec[4]))
+        this.publishProperty('course', STATUS_COURSES.map(rec[4]))
         this.publishProperty('remaining_time', rec[13])
         this.publishProperty('initial_time', rec[15])
         this.publishProperty('energy', rec[16] * 256 + rec[17])
@@ -408,6 +526,29 @@ export default class Device extends AABBDevice {
     setProperty(prop: string, mqttValue: string) {
         if (prop === 'power') {
             const message = Buffer.from(mqttValue === 'ON' ? 'F0A10100' : 'F0E5000201FF010200', 'hex')
+            this.send(message)
+        }
+        else if (SELECTABLES.includes(prop)) {
+            this.publishProperty(prop, mqttValue)
+            const currentState = this.publishCache
+            const courseName = String(currentState.get('course'))
+            const tempName = String(currentState.get('temp'))
+            const spinName = String(currentState.get('spin'))
+            const rinseName = String(currentState.get('rinse'))
+            const soilName = String(currentState.get('soil'))
+            const steamName = String(currentState.get('steam'))
+            const turboWashName = String(currentState.get('turbowash'))
+            const preWashName = String(currentState.get('prewash'))
+
+            const course = toHexString(STATUS_COURSES.unmap(courseName))
+            const temp = toHexString(STATUS_TEMPERATURES.unmap(tempName))
+            const spin = toHexString(SPINS.unmap(spinName))
+            const rinse = toHexString(STATUS_RINSES.unmap(rinseName))
+            const soil = toHexString(STATUS_SOIL.unmap(soilName))
+            const steam = toHexString(steamName === 'ON' ? 0x01 : 0x00)
+            const turboWash = toHexString(turboWashName === 'ON' ? 0x01 : 0x00)
+            const preWash = toHexString(preWashName === 'ON' ? 0x01 : 0x00)
+            const message = Buffer.from(`F0E5000201FF090A${course}1E${soil}20${rinse}21${spin}1F${temp}3E${steam}35${turboWash}34${preWash}7F0000`, 'hex');
             this.send(message)
         }
     };
