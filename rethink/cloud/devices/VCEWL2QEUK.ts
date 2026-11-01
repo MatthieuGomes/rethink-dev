@@ -223,7 +223,7 @@ export default class Device extends AABBDevice {
                         name: 'Spin',
                         icon: 'mdi:autorenew',
                         device_class: 'enum',
-                        options: STATUS_SPINS.options,
+                        options: SPINS.options,
                     },
                     energy: {
                         platform: 'sensor',
@@ -371,7 +371,7 @@ export default class Device extends AABBDevice {
                         command_topic: '$this/temp/set',
                         name: 'RETemperature',
                         device_class: 'enum',
-                        options: STATUS_TEMPERATURES.options,
+                        options: TEMPERATURES.options,
                     },
                     respin: {
                         platform: 'select',
@@ -381,7 +381,7 @@ export default class Device extends AABBDevice {
                         name: 'RESpin',
                         icon: 'mdi:autorenew',
                         device_class: 'enum',
-                        options: STATUS_SPINS.options,
+                        options: SPINS.options,
                     },
                     resoil: {
                         platform: 'select',
@@ -391,7 +391,7 @@ export default class Device extends AABBDevice {
                         name: 'ReSoil level',
                         icon: 'mdi:liquid-spot',
                         device_class: 'enum',
-                        options: STATUS_SOIL.options,
+                        options: SOIL_BY_LEVEL.options,
                         // free-text (like course/status): unmapped levels read unknown.
                     },
                     rerinse: {
@@ -402,7 +402,7 @@ export default class Device extends AABBDevice {
                         name: 'RERinse',
                         icon: 'mdi:water-sync',
                         device_class: 'enum',
-                        options: STATUS_RINSES.options,
+                        options: RINSES.options,
                     },
                     reprewash: {
                         platform: 'switch',
@@ -512,9 +512,9 @@ export default class Device extends AABBDevice {
         console.log('------------------------------------------------------------------------------------------------')
         const status = STATUS.map(rec[20]) ?? 'Running'
         const soil = SOIL_BY_LEVEL.map(rec[0])
-        const rinse = STATUS_RINSES.map(rec[26])
-        const temp = STATUS_TEMPERATURES.map(rec[1] + 1)
-        const spin = STATUS_SPINS.map(rec[3] + 1)
+        const rinse = RINSES.map(rec[26])
+        const temp = TEMPERATURES.map(rec[1] + 1)
+        const spin = SPINS.map(rec[3] + 1)
         const course = STATUS_COURSES.map(rec[4])
         const prewash = (rec[OPT_BYTE_A] & OPT_PREWASH) !== 0 ? 'ON' : 'OFF'
         const turbowash = (rec[OPT_BYTE_A] & OPT_TURBOWASH) !== 0 ? 'ON' : 'OFF'
@@ -525,12 +525,12 @@ export default class Device extends AABBDevice {
         console.log('------------------------------------------------------------------------------------------------')
         this.publishProperty('status', STATUS.map(rec[20]) ?? 'Running')
         this.publishProperty('soil', SOIL_BY_LEVEL.map(rec[0]))
-        this.publishProperty('rinse', STATUS_RINSES.map(rec[26]))
+        this.publishProperty('rinse', RINSES.map(rec[26]))
 
         // The original author claims that 50 °C and 600 RPM options are not offered on this model.
         // Here we read out what the device sent us, so supporting these anyway is harmless.
-        this.publishProperty('temp', STATUS_TEMPERATURES.map(rec[1] + 1))
-        this.publishProperty('spin', STATUS_SPINS.map(rec[3] + 1))
+        this.publishProperty('temp', TEMPERATURES.map(rec[1] + 1))
+        this.publishProperty('spin', SPINS.map(rec[3] + 1))
         this.publishProperty('course', STATUS_COURSES.map(rec[4]))
         this.publishProperty('remaining_time', rec[13])
         this.publishProperty('initial_time', rec[15])
@@ -566,10 +566,10 @@ export default class Device extends AABBDevice {
             const preWashName = String(currentState.get('prewash'))
 
             const course = toHexString(STATUS_COURSES.unmap(courseName))
-            const temp = toHexString(STATUS_TEMPERATURES.unmap(tempName))
-            const spin = toHexString(STATUS_SPINS.unmap(spinName))
-            const rinse = toHexString(STATUS_RINSES.unmap(rinseName))
-            const soil = toHexString(STATUS_SOIL.unmap(soilName))
+            const temp = toHexString(TEMPERATURES.unmap(tempName))
+            const spin = toHexString(SPINS.unmap(spinName))
+            const rinse = toHexString(RINSES.unmap(rinseName))
+            const soil = toHexString(SOIL_BY_LEVEL.unmap(soilName))
             const steam = toHexString(steamName === 'ON' ? 0x01 : 0x00)
             const turboWash = toHexString(turboWashName === 'ON' ? 0x01 : 0x00)
             const preWash = toHexString(preWashName === 'ON' ? 0x01 : 0x00)
