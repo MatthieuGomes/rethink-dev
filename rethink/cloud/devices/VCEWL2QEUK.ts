@@ -172,7 +172,7 @@ const TUB_CLEAN_OFFSET = 27
 
 const SELECTABLES = ['course', 'temp', 'spin', 'rinse', 'soil', 'steam', 'turbowash', 'prewash']
 
-function toHexString(value: number|undefined): string {
+function toHexString(value: number | undefined): string {
     return Number(value).toString(16).padStart(2, '0').toUpperCase();
 }
 
@@ -548,6 +548,7 @@ export default class Device extends AABBDevice {
             const steam = toHexString(steamName === 'ON' ? 0x01 : 0x00)
             const turboWash = toHexString(turboWashName === 'ON' ? 0x01 : 0x00)
             const preWash = toHexString(preWashName === 'ON' ? 0x01 : 0x00)
+            console.log('course:', course, 'temp:', '|', temp, 'spin:', spin, '|', 'rinse:', rinse, '|', 'soil:', soil, '|', 'steam:', steam, '|', 'turboWash:', turboWash, '|', 'preWash:', preWash)
             const message = Buffer.from(`F0E5000201FF090A${course}1E${soil}20${rinse}21${spin}1F${temp}3E${steam}35${turboWash}34${preWash}7F0000`, 'hex');
             this.send(message)
         }
