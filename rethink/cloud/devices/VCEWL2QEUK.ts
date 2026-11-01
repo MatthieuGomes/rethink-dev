@@ -223,7 +223,7 @@ export default class Device extends AABBDevice {
                         name: 'Spin',
                         icon: 'mdi:autorenew',
                         device_class: 'enum',
-                        options: SPINS.options,
+                        options: STATUS_SPINS.options,
                     },
                     energy: {
                         platform: 'sensor',
@@ -497,7 +497,19 @@ export default class Device extends AABBDevice {
         // During the non-wash phases soil (rec[0]) and temp (rec[1]) are simply 0 → read unknown,
         // which is correct (no wash intensity / no active heat then).
         this.publishProperty('power', 'ON')
+        const status = STATUS.map(rec[20]) ?? 'Running'
+        const soil = SOIL_BY_LEVEL.map(rec[0])
+        const rinse = STATUS_RINSES.map(rec[26])
+        const temp = STATUS_TEMPERATURES.map(rec[1] + 1)
+        const spin = STATUS_SPINS.map(rec[3] + 1)
+        const course = STATUS_COURSES.map(rec[4])
+        const prewash = (rec[OPT_BYTE_A] & OPT_PREWASH) !== 0 ? 'ON' : 'OFF'
+        const turbowash = (rec[OPT_BYTE_A] & OPT_TURBOWASH) !== 0 ? 'ON' : 'OFF'
+        const steam = (rec[OPT_BYTE_B] & OPT_STEAM) !== 0 ? 'ON' : 'OFF'
 
+        console.log('------------------------------------------------------------------------------------------------')
+        console.log('status:', status, '|', 'soil:', soil, '|', 'rinse:', rinse, '|', 'temp:', temp, '|', 'spin:', spin, '|', 'course:', course, '|', 'prewash:', prewash, '|', 'turbowash:', turbowash, '|', 'steam:', steam)
+        console.log('------------------------------------------------------------------------------------------------')
         this.publishProperty('status', STATUS.map(rec[20]) ?? 'Running')
         this.publishProperty('soil', SOIL_BY_LEVEL.map(rec[0]))
         this.publishProperty('rinse', STATUS_RINSES.map(rec[26]))
