@@ -497,15 +497,16 @@ export default class Device extends AABBDevice {
         // During the non-wash phases soil (rec[0]) and temp (rec[1]) are simply 0 → read unknown,
         // which is correct (no wash intensity / no active heat then).
         this.publishProperty('power', 'ON')
-        const status_byte = rec[20]
-        const soil_byte = rec[0]
-        const rinse_byte = rec[26]
-        const temp_byte = rec[1] + 1
-        const spin_byte = rec[3] + 1
-        const course_byte = rec[4]
-        const prewash_byte = rec[OPT_BYTE_A]
-        const turbowash_byte = rec[OPT_BYTE_A]
-        const steam_byte = rec[OPT_BYTE_B]
+        const status_byte = toHexString(rec[20])
+        const soil_byte = toHexString(rec[0])
+        const rinse_byte = toHexString(rec[26])
+        const temp_byte = toHexString(rec[1] + 1)
+        const spin_byte = toHexString(rec[3] + 1)
+        const course_byte = toHexString(rec[4])
+        const prewash_byte = toHexString(rec[OPT_BYTE_A])
+        const turbowash_byte = toHexString(rec[OPT_BYTE_A])
+        const steam_byte = toHexString(rec[OPT_BYTE_B])
+        console.log('------------------------------------------------------------------------------------------------')
         console.log('------------------------------------------------------------------------------------------------')
         console.log('status:', status_byte, '|', 'soil:', soil_byte, '|', 'rinse:', rinse_byte, '|', 'temp:', temp_byte, '|', 'spin:', spin_byte, '|', 'course:', course_byte, '|', 'soil', soil_byte, '|', 'prewash:', prewash_byte, '|', 'turbowash:', turbowash_byte, '|', 'steam:', steam_byte)
         console.log('------------------------------------------------------------------------------------------------')
