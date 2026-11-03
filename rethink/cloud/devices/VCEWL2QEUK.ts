@@ -5,7 +5,6 @@ import { type Metadata } from '../thinq'
 import { allowExtendedType } from '@/util/casting'
 import AABBDevice from './aabb_device'
 import { Enum } from '@/util/enum'
-import { RINSES, SPINS, TEMPERATURES } from './washer_common'
 
 // LG F4X7511TWS front-load washer — matched on modelId "VCDWL2QEUK". Unlike the 80-byte
 // single-frame F-class washers, this model emits several AABB frame types, discriminated by inner[3]
@@ -28,7 +27,6 @@ const STATUS_FRAME_LEN = 142 // 15B header + 63B recA + 63B recB + 1B trailer
 // phases, the spin-only program, and standby (there is no wash intensity then). RE'd by stepping the soil
 // level on a fixed course and diffing record B (each level confirmed twice). Power/off is keyed on the
 // status byte rec[20], not on this soil lead (see the power-derivation note below).
-const SOIL_BY_LEVEL = Enum.of({ Light: 1, Medium: 3, Heavy: 5 })
 const DOOR_FRAME_TYPE = 0x41
 const DOOR_OFFSET = 18 // buf[18] in the 0x41 snapshot: 0x02 = closed, 0x01 = open
 const DOOR_CLOSED = 0x02
@@ -49,74 +47,66 @@ const RECORD_B_STANDBY = 0x00
 // NOTE: The shared SPINS & TEMPERATURES enums match the values used by this washer, when shifted by 1.
 // This is accounted for when calling .map()
 
-const STATUS_SPINS = Enum.of({
-    'Not selected': 0xFF,
-    'No spin': 0x00,
-    '400 rpm': 0x01,
-    '800 rpm': 0x04,
-    '1000 rpm': 0x06,
-    '1200 rpm': 0x08,
-    '1400 rpm': 0x09,
+const CORRECTED_COURSES = Enum.of({
+    'Coton': 0x2E,
+    'Rapide 14': 0x4B,
+    'Serviettes': 0x54,
+    'Manche, ourlets et cols': 0xA9,
+    'Main/laine': 0x5E,
+    'Literie': 0x81,
+    'Délicat': 0x16,
+    'AI Wash': 0x72,
+    'Couette': 0x1B,
+    'Doudoune': 0x73,
+    'Nettoyage de la cuve': 0x55,
+    'Rinçage+Essorage': 0x37,
+    'Synthétiques': 0x1D,
+    'Essorage seul': 0x4E,
+    'Mix': 0x2B,
+    'Eco 40-60': 0x13,
+    'TurboWash 39': 0x7A,
+    'Réduction microplastiques': 0x88,
+    'Textiles sport': 0x4F,
+    'Anti-allergie': 0x04,
+    'Lavage à froid': 0x11,
+    'Jours pluvieux': 0x6A,
+    'Lavage silencieux': 0x42,
+    'Baby Care Vapeur': 0x07,
 })
 
-
-const STATUS_TEMPERATURES = Enum.of({
-    'Not selected': 0xFF,
-    Cold: 0x08,
-    '20 °C': 0x01,
-    '30 °C': 0x02,
-    '40 °C': 0x03,
-    '60 °C': 0x05,
-    '95 °C': 0x06,
+const CORRECTED_TEMPERATURES = Enum.of({
+    'Cold': 0x09,
+    '20°C': 0x02,
+    '30°C': 0x03,
+    '40°C': 0x04,
+    '60°C': 0x06,
+    '95°C': 0x07,
 })
 
-const STATUS_RINSES = Enum.of({
-    'Not selected': 0xFF,
-    'No rinse': 0x00,
-    'Rinse': 0x0E,
-    'Rinse+': 0x0F,
-    'Rinse++': 0x10,
-    'Rinse + Hold': 0x12,
-    'Rinse+ + Hold': 0x13,
+const CORRECTED_RINSES = Enum.of({
+    'Disabled': 0x00,
+    'Rinse/Default': 0x01,
+    'Rinse+': 0x02,
+    'Rinse++': 0x03,
+    'Rinse + Hold': 0x04,
+    'Rinse+ + Hold': 0x05,
 })
 
-const STATUS_SOIL = Enum.of({
-    'Not selected': 0xFF,
+const CORRECTED_SPINS = Enum.of({
+    'Disabled': 0x01,
+    '400 rpm': 0x02,
+    '800 rpm': 0x05,
+    '1000 rpm': 0x07,
+    '1200 rpm': 0x09,
+    '1400 rpm': 0x0A,
+})
+
+const CORRECTED_SOILS = Enum.of({
     'Light': 0x01,
     'Medium': 0x03,
     'Heavy': 0x05,
-});
-
-const STATUS_COURSES = Enum.of({
-    'AI Wash': 0x72,
-    Cotton: 0x2e,
-    Towels: 0x54,
-    'Quick 14': 0x4b,
-    'Spin only': 0x4e, // a 0x00-soil-led program; decoded like the rinse/spin phases (same record-B offsets)
-    'Drum Clean': 0x55,
-    // RE'd 2026-06-30 by pushing each program from the LG app and reading rec[4] (cross-checked against
-    // the rec[19] repeat). English names for the DK programs this unit offers.
-    'Eco 40-60': 0x13,
-    'TurboWash 39': 0x7a,
-    Mixed: 0x2b,
-    Delicate: 0x16,
-    'Easy Care': 0x1d,
-    'Hand/Wool': 0x5e,
-    Activewear: 0x4f,
-    'Allergy Care': 0x04,
-    Duvet: 0x1b,
-    'Cold Wash': 0x11,
-    Bedding: 0x81,
-    'Cuffs & Collars': 0xa9,
-    'Rainy Days': 0x6a,
-    'Silent Wash': 0x42,
-    'Baby Steam Care': 0x07,
-    'Down Jacket': 0x73,
-    'Microplastic Care': 0x88,
-    // pure rinse+spin program: 0x00-soil-led (no wash phase, like spin-only), decoded via the running
-    // path since its status byte is non-zero.
-    'Rinse + Spin': 0x37,
 })
+
 
 // status from record[20] — a course-dependent "step" id (NOT the F-class STATES indices). Maintenance
 // courses use their own ids (Drum Clean = 0x29); anything unmapped falls back to 'Running' (free-text
@@ -214,7 +204,7 @@ export default class Device extends AABBDevice {
                         state_topic: '$this/temp',
                         name: 'Temperature',
                         device_class: 'enum',
-                        options: TEMPERATURES.options,
+                        options: CORRECTED_TEMPERATURES.options,
                     },
                     spin: {
                         platform: 'sensor',
@@ -223,7 +213,7 @@ export default class Device extends AABBDevice {
                         name: 'Spin',
                         icon: 'mdi:autorenew',
                         device_class: 'enum',
-                        options: SPINS.options,
+                        options: CORRECTED_SPINS.options,
                     },
                     energy: {
                         platform: 'sensor',
@@ -362,7 +352,7 @@ export default class Device extends AABBDevice {
                         name: 'RECourse',
                         icon: 'mdi:washing-machine',
                         device_class: 'enum',
-                        options: STATUS_COURSES.options,
+                        options: CORRECTED_COURSES.options,
                     },
                     retemp: {
                         platform: 'select',
@@ -371,7 +361,7 @@ export default class Device extends AABBDevice {
                         command_topic: '$this/temp/set',
                         name: 'RETemperature',
                         device_class: 'enum',
-                        options: TEMPERATURES.options,
+                        options: CORRECTED_TEMPERATURES.options,
                     },
                     respin: {
                         platform: 'select',
@@ -381,7 +371,7 @@ export default class Device extends AABBDevice {
                         name: 'RESpin',
                         icon: 'mdi:autorenew',
                         device_class: 'enum',
-                        options: SPINS.options,
+                        options: CORRECTED_SPINS.options,
                     },
                     resoil: {
                         platform: 'select',
@@ -391,7 +381,7 @@ export default class Device extends AABBDevice {
                         name: 'ReSoil level',
                         icon: 'mdi:liquid-spot',
                         device_class: 'enum',
-                        options: SOIL_BY_LEVEL.options,
+                        options: CORRECTED_SOILS.options,
                         // free-text (like course/status): unmapped levels read unknown.
                     },
                     rerinse: {
@@ -402,7 +392,7 @@ export default class Device extends AABBDevice {
                         name: 'RERinse',
                         icon: 'mdi:water-sync',
                         device_class: 'enum',
-                        options: RINSES.options,
+                        options: CORRECTED_RINSES.options,
                     },
                     reprewash: {
                         platform: 'switch',
@@ -461,7 +451,7 @@ export default class Device extends AABBDevice {
 
     // 0x92 — runtime status (current-state record B, laid out [SOIL] [TEMP] 0e [SPIN] [COURSE]…):
     //   rec[0]  = soil level (also the running discriminator), rec[1] = temp idx, rec[3] = spin idx,
-    //   rec[4]  = course code (status-frame encodings; see the SOIL_BY_LEVEL / STATUS_*_BY_INDEX /
+    //   rec[4]  = course code (status-frame encodings; see the CORRECTED_SOILS / STATUS_*_BY_INDEX /
     //            STATUS_COURSE tables — distinct from the 0x88 indices),
     //   rec[20] = status code, rec[13] = remaining min, rec[15] = initial min,
     //   rec[16:18] = energy (big-endian Wh, same shape as the F-class buf[71]*256+buf[72]; confirmed
@@ -511,11 +501,11 @@ export default class Device extends AABBDevice {
         console.log('status:', status_byte, '|', 'soil:', soil_byte, '|', 'rinse:', rinse_byte, '|', 'temp:', temp_byte, '|', 'spin:', spin_byte, '|', 'course:', course_byte, '|', 'soil', soil_byte, '|', 'prewash:', prewash_byte, '|', 'turbowash:', turbowash_byte, '|', 'steam:', steam_byte)
         console.log('------------------------------------------------------------------------------------------------')
         const status = STATUS.map(rec[20]) ?? 'Running'
-        const soil = SOIL_BY_LEVEL.map(rec[0])
-        const rinse = RINSES.map(rec[26])
-        const temp = TEMPERATURES.map(rec[1] + 1)
-        const spin = SPINS.map(rec[3] + 1)
-        const course = STATUS_COURSES.map(rec[4])
+        const soil = CORRECTED_SOILS.map(rec[0])
+        const rinse = CORRECTED_RINSES.map(rec[26])
+        const temp = CORRECTED_TEMPERATURES.map(rec[1] + 1)
+        const spin = CORRECTED_SPINS.map(rec[3] + 1)
+        const course = CORRECTED_COURSES.map(rec[4])
         const prewash = (rec[OPT_BYTE_A] & OPT_PREWASH) !== 0 ? 'ON' : 'OFF'
         const turbowash = (rec[OPT_BYTE_A] & OPT_TURBOWASH) !== 0 ? 'ON' : 'OFF'
         const steam = (rec[OPT_BYTE_B] & OPT_STEAM) !== 0 ? 'ON' : 'OFF'
@@ -524,14 +514,14 @@ export default class Device extends AABBDevice {
         console.log('status:', status, '|', 'soil:', soil, '|', 'rinse:', rinse, '|', 'temp:', temp, '|', 'spin:', spin, '|', 'course:', course, '|', 'soil', soil, '|', 'prewash:', prewash, '|', 'turbowash:', turbowash, '|', 'steam:', steam)
         console.log('------------------------------------------------------------------------------------------------')
         this.publishProperty('status', STATUS.map(rec[20]) ?? 'Running')
-        this.publishProperty('soil', SOIL_BY_LEVEL.map(rec[0]))
-        this.publishProperty('rinse', RINSES.map(rec[26]))
+        this.publishProperty('soil', CORRECTED_SOILS.map(rec[0]))
+        this.publishProperty('rinse', CORRECTED_RINSES.map(rec[26]))
 
         // The original author claims that 50 °C and 600 RPM options are not offered on this model.
         // Here we read out what the device sent us, so supporting these anyway is harmless.
-        this.publishProperty('temp', TEMPERATURES.map(rec[1] + 1))
-        this.publishProperty('spin', SPINS.map(rec[3] + 1))
-        this.publishProperty('course', STATUS_COURSES.map(rec[4]))
+        this.publishProperty('temp', CORRECTED_TEMPERATURES.map(rec[1] + 1))
+        this.publishProperty('spin', CORRECTED_SPINS.map(rec[3] + 1))
+        this.publishProperty('course', CORRECTED_COURSES.map(rec[4]))
         this.publishProperty('remaining_time', rec[13])
         this.publishProperty('initial_time', rec[15])
         this.publishProperty('energy', rec[16] * 256 + rec[17])
@@ -565,11 +555,12 @@ export default class Device extends AABBDevice {
             const turboWashName = String(currentState.get('turbowash'))
             const preWashName = String(currentState.get('prewash'))
 
-            const course = toHexString(STATUS_COURSES.unmap(courseName))
-            const temp = toHexString(TEMPERATURES.unmap(tempName))
-            const spin = toHexString(SPINS.unmap(spinName))
-            const rinse = toHexString(RINSES.unmap(rinseName))
-            const soil = toHexString(SOIL_BY_LEVEL.unmap(soilName))
+
+            const course = toHexString(CORRECTED_COURSES.unmap(courseName))
+            const temp = toHexString(CORRECTED_TEMPERATURES.unmap(tempName))
+            const spin = toHexString(CORRECTED_SPINS.unmap(spinName))
+            const rinse = toHexString(CORRECTED_RINSES.unmap(rinseName))
+            const soil = toHexString(CORRECTED_SOILS.unmap(soilName))
             const steam = toHexString(steamName === 'ON' ? 0x01 : 0x00)
             const turboWash = toHexString(turboWashName === 'ON' ? 0x01 : 0x00)
             const preWash = toHexString(preWashName === 'ON' ? 0x01 : 0x00)
