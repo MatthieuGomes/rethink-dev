@@ -107,6 +107,10 @@ const CORRECTED_SOILS = Enum.of({
     'Heavy': 0x05,
 })
 
+const ONOFF = Enum.of({
+    ON: 0x01,
+    OFF: 0x00,
+})
 
 // status from record[20] — a course-dependent "step" id (NOT the F-class STATES indices). Maintenance
 // courses use their own ids (Drum Clean = 0x29); anything unmapped falls back to 'Running' (free-text
@@ -393,6 +397,36 @@ export default class Device extends AABBDevice {
                         icon: 'mdi:water-sync',
                         device_class: 'enum',
                         options: CORRECTED_RINSES.options,
+                    },
+                    selectable_prewash: {
+                        platform: 'select',
+                        unique_id: '$deviceid-selectable-prewash',
+                        state_topic: '$this/prewash',
+                        command_topic: '$this/prewash/set',
+                        name: 'Selectable Pre-wash',
+                        icon: 'mdi:water-sync',
+                        device_class: 'enum',
+                        options: ONOFF.options,
+                    },
+                    selectable_turbowash: {
+                        platform: 'select',
+                        unique_id: '$deviceid-selectable-turbowash',
+                        state_topic: '$this/turbowash',
+                        command_topic: '$this/turbowash/set',
+                        name: 'Selectable TurboWash',
+                        icon: 'mdi:rocket-launch',
+                        device_class: 'enum',
+                        options: ONOFF.options,
+                    },
+                    selectable_steam: {
+                        platform: 'select',
+                        unique_id: '$deviceid-selectable-steam',
+                        state_topic: '$this/steam',
+                        command_topic: '$this/steam/set',
+                        name: 'Selectable Steam',
+                        icon: 'mdi:kettle-steam',
+                        device_class: 'enum',
+                        options: ONOFF.options,
                     },
                     reprewash: {
                         platform: 'switch',
