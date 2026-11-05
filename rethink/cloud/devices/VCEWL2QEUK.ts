@@ -165,7 +165,7 @@ const FLAG_REMOTE_START = 0x10
 const TUB_CLEAN_OFFSET = 27
 
 const SELECTABLES = ['course', 'temp', 'spin', 'rinse', 'soil', 'steam', 'turbowash', 'prewash']
-
+const PRE_SELECTABLES = ['pre_course', 'pre_temp', 'pre_spin', 'pre_rinse', 'pre_soil', 'pre_steam', 'pre_turbowash', 'pre_prewash']
 function toHexString(value: number | undefined): string {
     return Number(value).toString(16).padStart(2, '0').toUpperCase();
 }
@@ -348,109 +348,87 @@ export default class Device extends AABBDevice {
                         // total_increasing would wrongly accumulate across the reset. Raw value is what we want.
                         entity_category: 'diagnostic',
                     },
-                    recourse: {
+                    pre_course: {
                         platform: 'select',
-                        unique_id: '$deviceid-course',
-                        state_topic: '$this/course',
-                        command_topic: '$this/course/set',
-                        name: 'RECourse',
+                        unique_id: '$deviceid-pre-course',
+                        state_topic: '$this/pre_course',
+                        command_topic: '$this/pre_course/set',
+                        name: 'Pre Course',
                         icon: 'mdi:washing-machine',
                         device_class: 'enum',
                         options: CORRECTED_COURSES.options,
                     },
-                    retemp: {
+                    pre_temp: {
                         platform: 'select',
-                        unique_id: '$deviceid-temp',
-                        state_topic: '$this/temp',
-                        command_topic: '$this/temp/set',
-                        name: 'RETemperature',
+                        unique_id: '$deviceid-pre_temp',
+                        state_topic: '$this/pre_temp',
+                        command_topic: '$this/pre_temp/set',
+                        name: 'Pre Temperature',
                         device_class: 'enum',
                         options: CORRECTED_TEMPERATURES.options,
                     },
-                    respin: {
+                    pre_spin: {
                         platform: 'select',
-                        unique_id: '$deviceid-spin',
-                        state_topic: '$this/spin',
-                        command_topic: '$this/spin/set',
-                        name: 'RESpin',
+                        unique_id: '$deviceid-pre_spin',
+                        state_topic: '$this/pre_spin',
+                        command_topic: '$this/pre_spin/set',
+                        name: 'Pre Spin',
                         icon: 'mdi:autorenew',
                         device_class: 'enum',
                         options: CORRECTED_SPINS.options,
                     },
-                    resoil: {
+                    pre_soil: {
                         platform: 'select',
-                        unique_id: '$deviceid-soil',
-                        state_topic: '$this/soil',
-                        command_topic: '$this/soil/set',
-                        name: 'ReSoil level',
+                        unique_id: '$deviceid-pre_soil',
+                        state_topic: '$this/pre_soil',
+                        command_topic: '$this/pre_soil/set',
+                        name: 'Pre Soil',
                         icon: 'mdi:liquid-spot',
                         device_class: 'enum',
                         options: CORRECTED_SOILS.options,
                         // free-text (like course/status): unmapped levels read unknown.
                     },
-                    rerinse: {
+                    pre_rinse: {
                         platform: 'select',
-                        unique_id: '$deviceid-rinse',
-                        state_topic: '$this/rinse',
-                        command_topic: '$this/rinse/set',
-                        name: 'RERinse',
+                        unique_id: '$deviceid-pre_rinse',
+                        state_topic: '$this/pre_rinse',
+                        command_topic: '$this/pre_rinse/set',
+                        name: 'Pre Rinse',
                         icon: 'mdi:water-sync',
                         device_class: 'enum',
                         options: CORRECTED_RINSES.options,
                     },
-                    selectable_prewash: {
-                        platform: 'select',
-                        unique_id: '$deviceid-selectable-prewash',
-                        state_topic: '$this/prewash',
-                        command_topic: '$this/prewash/set',
-                        name: 'Selectable Pre-wash',
-                        icon: 'mdi:water-sync',
-                        device_class: 'enum',
-                        options: ONOFF.options,
-                    },
-                    selectable_turbowash: {
-                        platform: 'select',
-                        unique_id: '$deviceid-selectable-turbowash',
-                        state_topic: '$this/turbowash',
-                        command_topic: '$this/turbowash/set',
-                        name: 'Selectable TurboWash',
-                        icon: 'mdi:rocket-launch',
-                        device_class: 'enum',
-                        options: ONOFF.options,
-                    },
-                    selectable_steam: {
-                        platform: 'select',
-                        unique_id: '$deviceid-selectable-steam',
-                        state_topic: '$this/steam',
-                        command_topic: '$this/steam/set',
-                        name: 'Selectable Steam',
-                        icon: 'mdi:kettle-steam',
-                        device_class: 'enum',
-                        options: ONOFF.options,
-                    },
-                    reprewash: {
+                    pre_prewash: {
                         platform: 'switch',
-                        unique_id: '$deviceid-prewash',
-                        state_topic: '$this/prewash',
-                        command_topic: '$this/prewash/set',
-                        name: 'REPre-wash',
+                        unique_id: '$deviceid-pre_prewash',
+                        state_topic: '$this/pre_prewash',
+                        command_topic: '$this/pre_prewash/set',
+                        name: 'Pre Pre-wash',
                         icon: 'mdi:water-sync',
                     },
-                    returbowash: {
+                    pre_turbowash: {
                         platform: 'switch',
-                        unique_id: '$deviceid-turbowash',
-                        state_topic: '$this/turbowash',
-                        command_topic: '$this/turbowash/set',
-                        name: 'RETurboWash',
+                        unique_id: '$deviceid-pre_turbowash',
+                        state_topic: '$this/pre_turbowash',
+                        command_topic: '$this/pre_turbowash/set',
+                        name: 'Pre TurboWash',
                         icon: 'mdi:rocket-launch',
                     },
-                    resteam: {
+                    pre_steam: {
                         platform: 'switch',
-                        unique_id: '$deviceid-steam',
-                        state_topic: '$this/steam',
-                        command_topic: '$this/steam/set',
-                        name: 'RESteam',
+                        unique_id: '$deviceid-pre_steam',
+                        state_topic: '$this/pre_steam',
+                        command_topic: '$this/pre_steam/set',
+                        name: 'Pre Steam',
                         icon: 'mdi:kettle-steam',
+                    },
+                    send_selected: {
+                        platform: 'button',
+                        unique_id: '$deviceid-send_selected',
+                        command_topic: '$this/send_selected/set',
+                        payload_press: '',
+                        name: 'Send',
+                        icon: 'mdi:send',
                     },
                 },
             }),
@@ -577,17 +555,17 @@ export default class Device extends AABBDevice {
             const message = Buffer.from(mqttValue === 'ON' ? 'F0A10100' : 'F0E5000201FF010200', 'hex')
             this.send(message)
         }
-        else if (SELECTABLES.includes(prop)) {
-            this.publishProperty(prop, mqttValue)
+        else if (PRE_SELECTABLES.includes(prop)) this.publishProperty(prop, mqttValue)
+        else if (prop === 'send_selected') {
             const currentState = this.publishCache
-            const courseName = String(currentState.get('course'))
-            const tempName = String(currentState.get('temp'))
-            const spinName = String(currentState.get('spin'))
-            const rinseName = String(currentState.get('rinse'))
-            const soilName = String(currentState.get('soil'))
-            const steamName = String(currentState.get('steam'))
-            const turboWashName = String(currentState.get('turbowash'))
-            const preWashName = String(currentState.get('prewash'))
+            const courseName = String(currentState.get('pre_course'))
+            const tempName = String(currentState.get('pre_temp'))
+            const spinName = String(currentState.get('pre_spin'))
+            const rinseName = String(currentState.get('pre_rinse'))
+            const soilName = String(currentState.get('pre_soil'))
+            const steamName = String(currentState.get('pre_steam'))
+            const turboWashName = String(currentState.get('pre_turbowash'))
+            const preWashName = String(currentState.get('pre_prewash'))
 
 
             const course = toHexString(CORRECTED_COURSES.unmap(courseName))
