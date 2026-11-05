@@ -305,7 +305,7 @@ export default class Device extends AABBDevice {
                         platform: 'binary_sensor',
                         unique_id: '$deviceid-prewash',
                         state_topic: '$this/prewash',
-                        name: 'Pre-wash',
+                        name: 'Prewash',
                         icon: 'mdi:water-sync',
                     },
                     turbowash: {
@@ -403,7 +403,7 @@ export default class Device extends AABBDevice {
                         unique_id: '$deviceid-pre_prewash',
                         state_topic: '$this/pre_prewash',
                         command_topic: '$this/pre_prewash/set',
-                        name: 'Pre Pre-wash',
+                        name: 'Pre Prewash',
                         icon: 'mdi:water-sync',
                     },
                     pre_turbowash: {
